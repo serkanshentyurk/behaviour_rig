@@ -1,0 +1,19 @@
+{
+  "version": 2,
+  "dgSpecHash": "G0R0KobV57jNQJ65dIvr78+KzkLOPsZQqkJja3oGw0u3hiU/5k3guYf7lgN0FuwqJMalkIq2O1JDpdx4p9Vaow==",
+  "success": true,
+  "projectFilePath": "C:\\Users\\Murri\\Documents\\SWC\\HeadFixedBehavior\\Protocols\\Auditory_discrimination\\Extensions.csproj",
+  "expectedPackageFiles": [
+    "C:\\Users\\Murri\\.nuget\\packages\\bonsai.core\\2.6.2\\bonsai.core.2.6.2.nupkg.sha512",
+    "C:\\Users\\Murri\\.nuget\\packages\\bonsai.dsp\\2.6.0\\bonsai.dsp.2.6.0.nupkg.sha512",
+    "C:\\Users\\Murri\\.nuget\\packages\\bonsai.system\\2.6.0\\bonsai.system.2.6.0.nupkg.sha512",
+    "C:\\Users\\Murri\\.nuget\\packages\\mathnet.numerics\\5.0.0\\mathnet.numerics.5.0.0.nupkg.sha512",
+    "C:\\Users\\Murri\\.nuget\\packages\\opencv.net\\3.3.1\\opencv.net.3.3.1.nupkg.sha512",
+    "C:\\Users\\Murri\\.nuget\\packages\\rx-core\\2.2.5\\rx-core.2.2.5.nupkg.sha512",
+    "C:\\Users\\Murri\\.nuget\\packages\\rx-interfaces\\2.2.5\\rx-interfaces.2.2.5.nupkg.sha512",
+    "C:\\Users\\Murri\\.nuget\\packages\\rx-linq\\2.2.5\\rx-linq.2.2.5.nupkg.sha512",
+    "C:\\Users\\Murri\\.nuget\\packages\\rx-platformservices\\2.2.5\\rx-platformservices.2.2.5.nupkg.sha512",
+    "C:\\Users\\Murri\\.nuget\\packages\\system.valuetuple\\4.4.0\\system.valuetuple.4.4.0.nupkg.sha512"
+  ],
+  "logs": []
+}

@@ -1,0 +1,14 @@
+{
+  "version": 2,
+  "dgSpecHash": "qFdu+uZieuzI6Z6E7NMMY50Cn6mCsQc34Qlta1SWZjhFVefEaOfiajL4VzVJ/AqBcuIJt8f4/iQGn7V9sBEErQ==",
+  "success": true,
+  "projectFilePath": "C:\\Users\\Psychophysics\\Desktop\\HeadFixedBehavior\\Protocols\\Auditory_Discrimination\\Extensions.csproj",
+  "expectedPackageFiles": [
+    "C:\\Users\\Psychophysics\\.nuget\\packages\\bonsai.core\\2.7.0\\bonsai.core.2.7.0.nupkg.sha512",
+    "C:\\Users\\Psychophysics\\.nuget\\packages\\rx-core\\2.2.5\\rx-core.2.2.5.nupkg.sha512",
+    "C:\\Users\\Psychophysics\\.nuget\\packages\\rx-interfaces\\2.2.5\\rx-interfaces.2.2.5.nupkg.sha512",
+    "C:\\Users\\Psychophysics\\.nuget\\packages\\rx-linq\\2.2.5\\rx-linq.2.2.5.nupkg.sha512",
+    "C:\\Users\\Psychophysics\\.nuget\\packages\\rx-platformservices\\2.2.5\\rx-platformservices.2.2.5.nupkg.sha512"
+  ],
+  "logs": []
+}

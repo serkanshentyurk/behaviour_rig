@@ -1,0 +1,73 @@
+{
+  "format": 1,
+  "restore": {
+    "C:\\Users\\Murri\\Documents\\SWC\\HeadFixedBehavior\\Protocols\\Auditory_discrimination\\Extensions.csproj": {}
+  },
+  "projects": {
+    "C:\\Users\\Murri\\Documents\\SWC\\HeadFixedBehavior\\Protocols\\Auditory_discrimination\\Extensions.csproj": {
+      "version": "1.0.0",
+      "restore": {
+        "projectUniqueName": "C:\\Users\\Murri\\Documents\\SWC\\HeadFixedBehavior\\Protocols\\Auditory_discrimination\\Extensions.csproj",
+        "projectName": "Extensions",
+        "projectPath": "C:\\Users\\Murri\\Documents\\SWC\\HeadFixedBehavior\\Protocols\\Auditory_discrimination\\Extensions.csproj",
+        "packagesPath": "C:\\Users\\Murri\\.nuget\\packages\\",
+        "outputPath": "C:\\Users\\Murri\\Documents\\SWC\\HeadFixedBehavior\\Protocols\\Auditory_discrimination\\obj\\",
+        "projectStyle": "PackageReference",
+        "fallbackFolders": [
+          "C:\\Program Files (x86)\\Microsoft Visual Studio\\Shared\\NuGetPackages"
+        ],
+        "configFilePaths": [
+          "C:\\Users\\Murri\\Documents\\SWC\\HeadFixedBehavior\\Protocols\\Auditory_discrimination\\NuGet.Config",
+          "C:\\Users\\Murri\\AppData\\Roaming\\NuGet\\NuGet.Config",
+          "C:\\Program Files (x86)\\NuGet\\Config\\Microsoft.VisualStudio.FallbackLocation.config",
+          "C:\\Program Files (x86)\\NuGet\\Config\\Microsoft.VisualStudio.Offline.config"
+        ],
+        "originalTargetFrameworks": [
+          "net472"
+        ],
+        "sources": {
+          "C:\\Program Files (x86)\\Microsoft SDKs\\NuGetPackages\\": {},
+          "C:\\Users\\Murri\\Documents\\MTurk\\Packages": {},
+          "https://api.nuget.org/v3/index.json": {},
+          "https://www.myget.org/F/bonsai-community/api/v3/index.json": {},
+          "https://www.myget.org/F/bonsai/api/v3/index.json": {}
+        },
+        "frameworks": {
+          "net472": {
+            "targetAlias": "net472",
+            "projectReferences": {}
+          }
+        },
+        "warningProperties": {
+          "warnAsError": [
+            "NU1605"
+          ]
+        }
+      },
+      "frameworks": {
+        "net472": {
+          "targetAlias": "net472",
+          "dependencies": {
+            "Bonsai.Core": {
+              "target": "Package",
+              "version": "[2.6.2, )"
+            },
+            "Bonsai.Dsp": {
+              "target": "Package",
+              "version": "[2.6.0, )"
+            },
+            "MathNet.Numerics": {
+              "target": "Package",
+              "version": "[5.0.0, )"
+            },
+            "OpenCV.Net": {
+              "target": "Package",
+              "version": "[3.3.1, )"
+            }
+          },
+          "runtimeIdentifierGraphPath": "C:\\Program Files\\dotnet\\sdk\\6.0.401\\RuntimeIdentifierGraph.json"
+        }
+      }
+    }
+  }
+}
