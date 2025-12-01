@@ -16,4 +16,4 @@ REM --- Move to the directory of this .bat file ---
 cd /d "%~dp0"
 
 REM --- Run the Python script that is in the same folder ---
-python "Bonsai_GUI_Script_V2.py"
+python "Bonsai_GUI_Serkan.py"
