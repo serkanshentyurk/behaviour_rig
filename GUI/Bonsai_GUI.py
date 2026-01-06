@@ -30,13 +30,11 @@ import json
 repo_path = os.path.dirname('/'.join(os.getcwd().split('\\')))
 protocols_path = repo_path + '/Protocols/' 
 subject_params_file = repo_path + '/Params/Subject_Params.csv'
+mouse_room_params_path = repo_path + '/Params/Mouse_Room_Params.xlsx'
+
 user_profile  = ('/'.join(os.environ['USERPROFILE'].split('\\')))
 bonsai_path = user_profile + '/AppData/Local/Bonsai/Bonsai.exe'
 
-CONFIG_FILE = repo_path +  "/GUI/paths/serkan.json"
-
-with open(CONFIG_FILE, "r") as f:
-    PATHS = json.load(f)
     
 # %%
 # add opto_type and zapit_nb_conditions to params
@@ -44,11 +42,14 @@ with open(CONFIG_FILE, "r") as f:
 # FUNCTIONAL CODE
 
 # Function to copy all contents
-def copy_all_contents(src, dest):
+def copy_all_contents(src, dest, user = 'SS'):
+    user_str = user.get()
     if not os.path.exists(dest):
         os.makedirs(dest)
 
     for item in os.listdir(src):
+        if not item.startswith(user_str):
+            continue
         src_item = os.path.join(src, item)
         dest_item = os.path.join(dest, item)
 
@@ -130,15 +131,9 @@ def load_csv():
     if subj == 'Select':
         tk.messagebox.showwarning("Warning", "Select a subject")
         return
-
-    # file_path = user_profile + '/Desktop/Bonsai_Sandbox/Repo_Test/Params/Example_Params.xlsx'
-    # df = pd.read_excel(file_path, sheet_name='Sheet1')
-
-    for drive in get_mapped_drives():
-        try:
-            df = pd.read_excel(drive[0:2] + PATHS['params_path'], sheet_name='Sheet2', converters={'opto_on': str})
-        except:
-            pass
+    
+    df = pd.read_excel(mouse_room_params_path, sheet_name = 'Params', converters={'opto_on': str})
+    
 
     if subj in df['Subject'].unique():
         subj_params = df[df['Subject'] == subj]
@@ -218,16 +213,7 @@ def launch_bonsai():
         run_protocol_button.config(bg='orange')
     elif run_protocol_button['bg'] == 'green':
         file_path = protocols_path + 'Auditory_Discrimination/Sound_Cat_V2.bonsai'     
-
-        # if protocol.get() == 'SOUND_CAT_DISC':
-        #     file_path = protocols_path + 'Auditory_Discrimination/Sound_Cat_Disc.bonsai'     
-        # elif protocol.get() == 'SOUND_CAT_CONT':
-        #     file_path = protocols_path + 'Auditory_Discrimination/Sound_Cat_Cont.bonsai'
-        # elif protocol.get() == 'PRO_ANTI':
-        #     file_path = protocols_path + 'Pro_Anti/Pro_Anti.bonsai'
-        # else:
-        #     file_path = ''
-
+        
         if os.path.exists(file_path):
             process = subprocess.Popen([bonsai_path, file_path, '--start'])
             run_protocol_button.config(text='End', bg='crimson')
@@ -288,6 +274,18 @@ def flush_rig():
         flush_rig_button.config(bg='green')
         
 def push_data():
+    experimenter_str = experimenter.get()
+    if experimenter_str == 'QP':
+        CONFIG_FILE = repo_path +  "/GUI/paths/quentin.json"
+    elif experimenter_str == 'SS':
+        CONFIG_FILE = repo_path +  "/GUI/paths/serkan.json"
+    else:
+        print('Wrong Experimenter')
+        
+
+    with open(CONFIG_FILE, "r") as f:
+        PATHS = json.load(f)
+    
     for drive in get_mapped_drives():
         try:
             server_data_path = drive[0:2] + PATHS['data_path']
@@ -295,7 +293,7 @@ def push_data():
             pass
     local_data_path = repo_path + '/Data'
     if os.path.exists(server_data_path):
-        copy_all_contents(local_data_path, server_data_path)
+        copy_all_contents(local_data_path, server_data_path, experimenter)
     else:
         tk.messagebox.showwarning("Warning", "No server found on current machine")        
         
@@ -374,6 +372,11 @@ push_data_button = tk.Button(setup_frame, text="Push Data", bg='green',
                                 height=1, width=10, font=my_font, command = push_data)
 push_data_button.grid(row=3, column=0, padx=10, pady=10, sticky="w")
 
+experimenter, experimenter_label, experimenter_dropdown = create_label_dropdown(parent_frame = setup_frame, 
+                                                                 label_text = "Experimenter:", 
+                                                                 option_list = ['SS', 'QP'],
+                                                                 y_pos = 0)
+
 # Add widgets to Tab 2
 beh_frame_1 = tk.Frame(beh_tab_1, bg='black')
 beh_frame_1.pack(pady=30)
@@ -385,14 +388,9 @@ beh_frame_1.pack(pady=30)
 current_date = datetime.datetime.now()
 # Get the current day of the week as a string
 day_name = current_date.strftime('%A')
-for drive in get_mapped_drives():
-    try:
-        file_path = drive[0:2] + PATHS['params_path']
-        mouse_room_params_df = pd.read_excel(file_path, sheet_name='Sheet2')
-    except:
-        pass
-# file_path = user_profile + '/Desktop/Bonsai_Sandbox/Repo_Test/Params/Example_Params.xlsx'
-# mouse_room_params_df = pd.read_excel(file_path, sheet_name='Sheet1')
+
+file_path = mouse_room_params_path
+mouse_room_params_df = pd.read_excel(file_path, sheet_name='Params')
 
 subject_option_list = mouse_room_params_df.Subject.unique().tolist() 
 subject, subject_label, subject_dropdown = create_label_dropdown(parent_frame = beh_frame_1, 
