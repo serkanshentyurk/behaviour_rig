@@ -23,6 +23,7 @@ import numpy as np
 import datetime
 import shutil
 import json
+from pathlib import Path
 
 # %%
 # PATHS
@@ -42,34 +43,34 @@ bonsai_path = user_profile + '/AppData/Local/Bonsai/Bonsai.exe'
 # FUNCTIONAL CODE
 
 # Function to copy all contents
-def copy_all_contents(src, dest, user = 'SS'):
-    if isinstance(user, str):
-        user_str = user
+def copy_all_contents(src, dest, user=None, is_top_level=True):
+    if is_top_level:
+        if isinstance(user, str):
+            user_str = user
+        else:
+            user_str = user.get()
     else:
-        user_str = user.get()
+        user_str = None  # Don't filter subdirectories
+        
     if not os.path.exists(dest):
         os.makedirs(dest)
 
     for item in os.listdir(src):
-        if not item.startswith(user_str):
+        # Only filter at top level
+        if is_top_level and user_str and not item.startswith(user_str):
             continue
-        src_item = os.path.join(src, item)
-        dest_item = os.path.join(dest, item)
+            
+        src_item = Path(src) / Path(item)
+        dest_item = Path(dest) / Path(item)
 
-        # If it's a directory
         if os.path.isdir(src_item):
-            # If directory doesn't exist in destination, copy the entire tree
             if not os.path.exists(dest_item):
                 shutil.copytree(src_item, dest_item)
             else:
-                # If directory exists in destination, dive in and check its contents
-                copy_all_contents(src_item, dest_item, user = user)
-        # If it's a file
+                copy_all_contents(src_item, dest_item, user=user, is_top_level=False)
         else:
-            # Only copy if file doesn't exist in destination
             if not os.path.exists(dest_item):
                 shutil.copy2(src_item, dest_item)
-
 def get_mapped_drives():
     drives = win32api.GetLogicalDriveStrings()
     drives = drives.split('\000')[:-1]
