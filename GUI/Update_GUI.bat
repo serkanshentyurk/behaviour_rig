@@ -7,12 +7,16 @@ set MASTER_FILE=%USERPROFILE%\Documents\Rig_Params.csv
 REM --- Path to the file inside the repo ---
 set TARGET_FILE=%~dp0\Params\Rig_Params.csv
 
-REM --- Activate Conda environment ---
-call "%USERPROFILE%\miniconda3\condabin\conda.bat" activate gui_env
-if errorlevel 1 (
-    echo ERROR: Conda activation failed.
-    pause
-    exit /b
+REM --- Try activating Conda ---
+if exist "%USERPROFILE%\miniconda3\condabin\conda.bat" (
+    echo Found Miniconda
+    call "%USERPROFILE%\miniconda3\condabin\conda.bat" activate gui_env
+) else if exist "%USERPROFILE%\anaconda3\condabin\conda.bat" (
+    echo Found Anaconda
+    call "%USERPROFILE%\anaconda3\condabin\conda.bat" activate gui_env
+) else (
+    echo ERROR: Conda not found
+    goto end
 )
 
 REM --- Move to the directory of this .bat file (repo root) ---
@@ -29,8 +33,10 @@ if exist "%MASTER_FILE%" (
     echo WARNING: Master file not found at %MASTER_FILE%.
 )
 
-REM --- Run your Python GUI ---
-python "Bonsai_GUI_Script_V2.py"
-
 echo Done!
-pause
+
+:end
+echo.
+echo === PRESS ANY KEY TO CLOSE ===
+pause >nul
+
