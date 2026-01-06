@@ -43,7 +43,10 @@ bonsai_path = user_profile + '/AppData/Local/Bonsai/Bonsai.exe'
 
 # Function to copy all contents
 def copy_all_contents(src, dest, user = 'SS'):
-    user_str = user.get()
+    if isinstance(user, str):
+        user_str = user
+    else:
+        user_str = user.get()
     if not os.path.exists(dest):
         os.makedirs(dest)
 
@@ -60,7 +63,7 @@ def copy_all_contents(src, dest, user = 'SS'):
                 shutil.copytree(src_item, dest_item)
             else:
                 # If directory exists in destination, dive in and check its contents
-                copy_all_contents(src_item, dest_item)
+                copy_all_contents(src_item, dest_item, user = user)
         # If it's a file
         else:
             # Only copy if file doesn't exist in destination
