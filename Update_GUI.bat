@@ -23,7 +23,9 @@ REM --- Move to the directory of this .bat file (repo root) ---
 cd /d "%~dp0"
 
 REM --- Pull the latest changes ---
-git pull
+git fetch
+git reset --hard origin/main
+git clean -fd
 
 REM --- Restore the protected file from master location ---
 if exist "%MASTER_FILE%" (
