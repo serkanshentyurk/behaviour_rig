@@ -414,7 +414,7 @@ protocol, protocol_label, protocol_dropdown = create_label_dropdown(parent_frame
 stage, stage_label, stage_dropdown = create_label_dropdown(parent_frame = beh_frame_1, 
                                                            label_text = "Stage:", 
                                                            option_list = ['Habituation', 'Lick_To_Release', 'Three_And_Three', 
-                                                                          'Full_Task_Disc', 'Full_Task_Cont'], 
+                                                                          'Full_Task_Disc', 'Full_Task_Cont', 'Habituation', 'Lick_To_Release'], 
                                                            y_pos = 2)
 
 # Rule
