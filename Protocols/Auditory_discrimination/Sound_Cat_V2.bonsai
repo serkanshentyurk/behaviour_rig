@@ -1416,7 +1416,7 @@
               <rx:BufferSize xsi:nil="true" />
             </Expression>
             <Expression xsi:type="io:CsvReader">
-              <io:FileName>C:\Users\ss\Documents\repos\behaviour_rig\Params\Subject_Params.csv</io:FileName>
+              <io:FileName>..\Params\Subject_Params.csv</io:FileName>
               <io:SkipRows>0</io:SkipRows>
             </Expression>
             <Expression xsi:type="rx:ReplaySubject">
@@ -17007,7 +17007,7 @@ def process(value):
                     </Workflow>
                   </Expression>
                   <Expression xsi:type="rx:Condition">
-                    <Name>Lick_To_Release_Cont</Name>
+                    <Name>Lick_To_Release_cont</Name>
                     <Workflow>
                       <Nodes>
                         <Expression xsi:type="WorkflowInput">
@@ -17018,7 +17018,7 @@ def process(value):
                         </Expression>
                         <Expression xsi:type="Equal">
                           <Operand xsi:type="StringProperty">
-                            <Value>Lick_To_Release_Cont</Value>
+                            <Value>Lick_To_Release_cont</Value>
                           </Operand>
                         </Expression>
                         <Expression xsi:type="WorkflowOutput" />
@@ -17031,7 +17031,7 @@ def process(value):
                     </Workflow>
                   </Expression>
                   <Expression xsi:type="rx:SelectMany">
-                    <Name>Lick_To_Release_Cont</Name>
+                    <Name>Lick_To_Release_cont</Name>
                     <Workflow>
                       <Nodes>
                         <Expression xsi:type="SubscribeSubject">
