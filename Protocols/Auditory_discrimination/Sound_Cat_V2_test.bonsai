@@ -16558,7 +16558,7 @@ def process(value):
                           </Workflow>
                         </Expression>
                         <Expression xsi:type="rx:SelectMany">
-                          <Name>&lt; boundary</Name>
+                          <Name>&lt;boundary</Name>
                           <Description />
                           <Workflow>
                             <Nodes>
@@ -16659,7 +16659,7 @@ def process(value):
                           </Workflow>
                         </Expression>
                         <Expression xsi:type="rx:SelectMany">
-                          <Name>&gt; boundary</Name>
+                          <Name>&gt;boundary</Name>
                           <Description />
                           <Workflow>
                             <Nodes>
