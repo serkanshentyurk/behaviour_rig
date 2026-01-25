@@ -3202,7 +3202,7 @@ def process(value):
             </Expression>
             <Expression xsi:type="Combinator">
               <Combinator xsi:type="IntProperty">
-                <Value>1</Value>
+                <Value>-2147483648</Value>
               </Combinator>
             </Expression>
             <Expression xsi:type="rx:BehaviorSubject">
@@ -3370,7 +3370,7 @@ def process(value):
             </Expression>
             <Expression xsi:type="Combinator">
               <Combinator xsi:type="IntProperty">
-                <Value>2</Value>
+                <Value>3</Value>
               </Combinator>
             </Expression>
             <Expression xsi:type="rx:BehaviorSubject">
@@ -4103,7 +4103,7 @@ def process(value):
                   </Expression>
                   <Expression xsi:type="Combinator">
                     <Combinator xsi:type="cv:VideoWriter">
-                      <cv:FileName>../Data/TEST/SOUND_CAT_TEST_2024_4_17/Video_data.avi</cv:FileName>
+                      <cv:FileName>../Data/SS01/SOUND_CAT_SS01_2026_1_21/Video_data.avi</cv:FileName>
                       <cv:Suffix>Timestamp</cv:Suffix>
                       <cv:Buffered>true</cv:Buffered>
                       <cv:Overwrite>true</cv:Overwrite>
@@ -4152,7 +4152,7 @@ def process(value):
                   </Expression>
                   <Expression xsi:type="Combinator">
                     <Combinator xsi:type="io:TextWriter">
-                      <io:FileName>../Data/TEST/SOUND_CAT_TEST_2024_4_17/Video_timestamps.txt</io:FileName>
+                      <io:FileName>../Data/SS01/SOUND_CAT_SS01_2026_1_21/Video_timestamps.txt</io:FileName>
                       <io:Suffix>Timestamp</io:Suffix>
                       <io:Buffered>true</io:Buffered>
                       <io:Overwrite>false</io:Overwrite>
@@ -4221,7 +4221,7 @@ def process(value):
                       <harp:VisualIndicators>On</harp:VisualIndicators>
                       <harp:Heartbeat>Disabled</harp:Heartbeat>
                       <harp:IgnoreErrors>false</harp:IgnoreErrors>
-                      <harp:PortName>COM6</harp:PortName>
+                      <harp:PortName>COM4</harp:PortName>
                     </Combinator>
                   </Expression>
                   <Expression xsi:type="SubscribeSubject">
@@ -4634,7 +4634,7 @@ def process(value):
                       <harp:VisualIndicators>On</harp:VisualIndicators>
                       <harp:Heartbeat>Disabled</harp:Heartbeat>
                       <harp:IgnoreErrors>false</harp:IgnoreErrors>
-                      <harp:PortName>COM8</harp:PortName>
+                      <harp:PortName>COM3</harp:PortName>
                     </Combinator>
                   </Expression>
                   <Expression xsi:type="SubscribeSubject">
@@ -5319,7 +5319,7 @@ Item1 + "/" + Item3 + "/" + Item2 +"_"+ Item3 +"_"+ Item4 + "/Zapit_Timestamps.c
               </PropertyMappings>
             </Expression>
             <Expression xsi:type="io:CsvWriter">
-              <io:FileName>../Data/TEST/SOUND_CAT_TEST_2024_4_17/Session_Parameters.csv</io:FileName>
+              <io:FileName>../Data/SS01/SOUND_CAT_SS01_2026_1_21/Session_Parameters.csv</io:FileName>
               <io:Delimiter>,</io:Delimiter>
               <io:Append>false</io:Append>
               <io:Overwrite>false</io:Overwrite>
@@ -5492,7 +5492,7 @@ Item2 as Time
               </PropertyMappings>
             </Expression>
             <Expression xsi:type="io:CsvWriter">
-              <io:FileName>../Data/TEST/SOUND_CAT_TEST_2024_4_17/Long_Form_Timestamps.csv</io:FileName>
+              <io:FileName>../Data/SS01/SOUND_CAT_SS01_2026_1_21/Long_Form_Timestamps.csv</io:FileName>
               <io:Delimiter>,</io:Delimiter>
               <io:Append>true</io:Append>
               <io:Overwrite>false</io:Overwrite>
@@ -5551,7 +5551,7 @@ Item2 as Time
               </PropertyMappings>
             </Expression>
             <Expression xsi:type="io:CsvWriter">
-              <io:FileName>../Data/TEST/SOUND_CAT_TEST_2024_4_17/Trial_Epochs.csv</io:FileName>
+              <io:FileName>../Data/SS01/SOUND_CAT_SS01_2026_1_21/Trial_Epochs.csv</io:FileName>
               <io:Delimiter>,</io:Delimiter>
               <io:Append>true</io:Append>
               <io:Overwrite>false</io:Overwrite>
@@ -5636,7 +5636,7 @@ Item3 as Spout
               </PropertyMappings>
             </Expression>
             <Expression xsi:type="io:CsvWriter">
-              <io:FileName>../Data/TEST/SOUND_CAT_TEST_2024_4_17/Detected_Licks.csv</io:FileName>
+              <io:FileName>../Data/SS01/SOUND_CAT_SS01_2026_1_21/Detected_Licks.csv</io:FileName>
               <io:Delimiter>,</io:Delimiter>
               <io:Append>false</io:Append>
               <io:Overwrite>false</io:Overwrite>
@@ -5747,7 +5747,7 @@ Item2 as Time
               </PropertyMappings>
             </Expression>
             <Expression xsi:type="io:CsvWriter">
-              <io:FileName>../Data/TEST/SOUND_CAT_TEST_2024_4_17/Zapit_Timestamps.csv</io:FileName>
+              <io:FileName>../Data/SS01/SOUND_CAT_SS01_2026_1_21/Zapit_Timestamps.csv</io:FileName>
               <io:Delimiter>,</io:Delimiter>
               <io:Append>true</io:Append>
               <io:Overwrite>false</io:Overwrite>
@@ -6155,7 +6155,7 @@ Item2 as Trial_End_Time
               </PropertyMappings>
             </Expression>
             <Expression xsi:type="io:CsvWriter">
-              <io:FileName>../Data/TEST/SOUND_CAT_TEST_2024_4_17/Trial_Summary.csv</io:FileName>
+              <io:FileName>../Data/SS01/SOUND_CAT_SS01_2026_1_21/Trial_Summary.csv</io:FileName>
               <io:Delimiter>,</io:Delimiter>
               <io:Append>true</io:Append>
               <io:Overwrite>false</io:Overwrite>
@@ -31159,7 +31159,7 @@ Item3 as Stim_Relative
             </Expression>
             <Expression xsi:type="Combinator">
               <Combinator xsi:type="dsp:Buffer">
-                <dsp:Count>2</dsp:Count>
+                <dsp:Count>3</dsp:Count>
                 <dsp:Skip>1</dsp:Skip>
               </Combinator>
             </Expression>
