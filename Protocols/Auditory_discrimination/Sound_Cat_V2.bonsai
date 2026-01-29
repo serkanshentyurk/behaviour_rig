@@ -7511,7 +7511,7 @@ def process(value):
                           </Workflow>
                         </Expression>
                         <Expression xsi:type="rx:SelectMany">
-                          <Name>-1</Name>
+                          <Name>&lt;0</Name>
                           <Workflow>
                             <Nodes>
                               <Expression xsi:type="SubscribeSubject">
@@ -7522,16 +7522,18 @@ def process(value):
                                   <Property Name="DueTime" />
                                 </PropertyMappings>
                               </Expression>
-                              <Expression xsi:type="WorkflowInput">
-                                <Name>Source1</Name>
-                              </Expression>
                               <Expression xsi:type="ExternalizedMapping">
-                                <Property Name="Value" />
+                                <Property Name="Lower" />
+                                <Property Name="Upper" />
                               </Expression>
                               <Expression xsi:type="Combinator">
-                                <Combinator xsi:type="FloatProperty">
-                                  <Value>-1</Value>
+                                <Combinator xsi:type="p1:CreateContinuousUniform">
+                                  <p1:Lower>-1</p1:Lower>
+                                  <p1:Upper>0</p1:Upper>
                                 </Combinator>
+                              </Expression>
+                              <Expression xsi:type="Combinator">
+                                <Combinator xsi:type="p1:Sample" />
                               </Expression>
                               <Expression xsi:type="MulticastSubject">
                                 <Name>Stim_Relative</Name>
@@ -7551,8 +7553,8 @@ def process(value):
                             <Edges>
                               <Edge From="0" To="1" Label="Source1" />
                               <Edge From="1" To="6" Label="Source2" />
-                              <Edge From="2" To="4" Label="Source1" />
-                              <Edge From="3" To="4" Label="Source2" />
+                              <Edge From="2" To="3" Label="Source1" />
+                              <Edge From="3" To="4" Label="Source1" />
                               <Edge From="4" To="5" Label="Source1" />
                               <Edge From="5" To="6" Label="Source1" />
                               <Edge From="6" To="7" Label="Source1" />
@@ -7665,7 +7667,7 @@ def process(value):
                           </Workflow>
                         </Expression>
                         <Expression xsi:type="rx:SelectMany">
-                          <Name>1</Name>
+                          <Name>&gt;0</Name>
                           <Workflow>
                             <Nodes>
                               <Expression xsi:type="SubscribeSubject">
@@ -7676,16 +7678,18 @@ def process(value):
                                   <Property Name="DueTime" />
                                 </PropertyMappings>
                               </Expression>
-                              <Expression xsi:type="WorkflowInput">
-                                <Name>Source1</Name>
-                              </Expression>
                               <Expression xsi:type="ExternalizedMapping">
-                                <Property Name="Value" />
+                                <Property Name="Lower" />
+                                <Property Name="Upper" />
                               </Expression>
                               <Expression xsi:type="Combinator">
-                                <Combinator xsi:type="FloatProperty">
-                                  <Value>1</Value>
+                                <Combinator xsi:type="p1:CreateContinuousUniform">
+                                  <p1:Lower>0</p1:Lower>
+                                  <p1:Upper>1</p1:Upper>
                                 </Combinator>
+                              </Expression>
+                              <Expression xsi:type="Combinator">
+                                <Combinator xsi:type="p1:Sample" />
                               </Expression>
                               <Expression xsi:type="MulticastSubject">
                                 <Name>Stim_Relative</Name>
@@ -7705,8 +7709,8 @@ def process(value):
                             <Edges>
                               <Edge From="0" To="1" Label="Source1" />
                               <Edge From="1" To="6" Label="Source2" />
-                              <Edge From="2" To="4" Label="Source1" />
-                              <Edge From="3" To="4" Label="Source2" />
+                              <Edge From="2" To="3" Label="Source1" />
+                              <Edge From="3" To="4" Label="Source1" />
                               <Edge From="4" To="5" Label="Source1" />
                               <Edge From="5" To="6" Label="Source1" />
                               <Edge From="6" To="7" Label="Source1" />
@@ -8101,7 +8105,7 @@ def process(value):
                           </Workflow>
                         </Expression>
                         <Expression xsi:type="rx:SelectMany">
-                          <Name>-1</Name>
+                          <Name>&lt;0</Name>
                           <Workflow>
                             <Nodes>
                               <Expression xsi:type="SubscribeSubject">
@@ -8112,23 +8116,25 @@ def process(value):
                                   <Property Name="DueTime" />
                                 </PropertyMappings>
                               </Expression>
-                              <Expression xsi:type="WorkflowInput">
-                                <Name>Source1</Name>
-                              </Expression>
                               <Expression xsi:type="ExternalizedMapping">
-                                <Property Name="Value" />
+                                <Property Name="Lower" />
+                                <Property Name="Upper" />
                               </Expression>
                               <Expression xsi:type="Combinator">
-                                <Combinator xsi:type="FloatProperty">
-                                  <Value>-1</Value>
+                                <Combinator xsi:type="p1:CreateContinuousUniform">
+                                  <p1:Lower>-1</p1:Lower>
+                                  <p1:Upper>0</p1:Upper>
                                 </Combinator>
+                              </Expression>
+                              <Expression xsi:type="Combinator">
+                                <Combinator xsi:type="p1:Sample" />
                               </Expression>
                               <Expression xsi:type="MulticastSubject">
                                 <Name>Stim_Relative</Name>
                               </Expression>
                               <Expression xsi:type="Combinator">
                                 <Combinator xsi:type="gl:Delay">
-                                  <gl:DueTime>PT0.5S</gl:DueTime>
+                                  <gl:DueTime>PT0.3S</gl:DueTime>
                                 </Combinator>
                               </Expression>
                               <Expression xsi:type="Combinator">
@@ -8141,8 +8147,8 @@ def process(value):
                             <Edges>
                               <Edge From="0" To="1" Label="Source1" />
                               <Edge From="1" To="6" Label="Source2" />
-                              <Edge From="2" To="4" Label="Source1" />
-                              <Edge From="3" To="4" Label="Source2" />
+                              <Edge From="2" To="3" Label="Source1" />
+                              <Edge From="3" To="4" Label="Source1" />
                               <Edge From="4" To="5" Label="Source1" />
                               <Edge From="5" To="6" Label="Source1" />
                               <Edge From="6" To="7" Label="Source1" />
@@ -8175,7 +8181,7 @@ def process(value):
                           </Workflow>
                         </Expression>
                         <Expression xsi:type="rx:SelectMany">
-                          <Name>1</Name>
+                          <Name>&gt;0</Name>
                           <Workflow>
                             <Nodes>
                               <Expression xsi:type="SubscribeSubject">
@@ -8186,23 +8192,25 @@ def process(value):
                                   <Property Name="DueTime" />
                                 </PropertyMappings>
                               </Expression>
-                              <Expression xsi:type="WorkflowInput">
-                                <Name>Source1</Name>
-                              </Expression>
                               <Expression xsi:type="ExternalizedMapping">
-                                <Property Name="Value" />
+                                <Property Name="Lower" />
+                                <Property Name="Upper" />
                               </Expression>
                               <Expression xsi:type="Combinator">
-                                <Combinator xsi:type="FloatProperty">
-                                  <Value>1</Value>
+                                <Combinator xsi:type="p1:CreateContinuousUniform">
+                                  <p1:Lower>0</p1:Lower>
+                                  <p1:Upper>1</p1:Upper>
                                 </Combinator>
+                              </Expression>
+                              <Expression xsi:type="Combinator">
+                                <Combinator xsi:type="p1:Sample" />
                               </Expression>
                               <Expression xsi:type="MulticastSubject">
                                 <Name>Stim_Relative</Name>
                               </Expression>
                               <Expression xsi:type="Combinator">
                                 <Combinator xsi:type="gl:Delay">
-                                  <gl:DueTime>PT0.5S</gl:DueTime>
+                                  <gl:DueTime>PT0.3S</gl:DueTime>
                                 </Combinator>
                               </Expression>
                               <Expression xsi:type="Combinator">
@@ -8215,8 +8223,8 @@ def process(value):
                             <Edges>
                               <Edge From="0" To="1" Label="Source1" />
                               <Edge From="1" To="6" Label="Source2" />
-                              <Edge From="2" To="4" Label="Source1" />
-                              <Edge From="3" To="4" Label="Source2" />
+                              <Edge From="2" To="3" Label="Source1" />
+                              <Edge From="3" To="4" Label="Source1" />
                               <Edge From="4" To="5" Label="Source1" />
                               <Edge From="5" To="6" Label="Source1" />
                               <Edge From="6" To="7" Label="Source1" />
@@ -8372,7 +8380,7 @@ def process(value):
                           </Workflow>
                         </Expression>
                         <Expression xsi:type="rx:SelectMany">
-                          <Name>1</Name>
+                          <Name>&gt;0</Name>
                           <Workflow>
                             <Nodes>
                               <Expression xsi:type="SubscribeSubject">
@@ -8383,23 +8391,25 @@ def process(value):
                                   <Property Name="DueTime" />
                                 </PropertyMappings>
                               </Expression>
-                              <Expression xsi:type="WorkflowInput">
-                                <Name>Source1</Name>
-                              </Expression>
                               <Expression xsi:type="ExternalizedMapping">
-                                <Property Name="Value" />
+                                <Property Name="Lower" />
+                                <Property Name="Upper" />
                               </Expression>
                               <Expression xsi:type="Combinator">
-                                <Combinator xsi:type="FloatProperty">
-                                  <Value>1</Value>
+                                <Combinator xsi:type="p1:CreateContinuousUniform">
+                                  <p1:Lower>0</p1:Lower>
+                                  <p1:Upper>1</p1:Upper>
                                 </Combinator>
+                              </Expression>
+                              <Expression xsi:type="Combinator">
+                                <Combinator xsi:type="p1:Sample" />
                               </Expression>
                               <Expression xsi:type="MulticastSubject">
                                 <Name>Stim_Relative</Name>
                               </Expression>
                               <Expression xsi:type="Combinator">
                                 <Combinator xsi:type="gl:Delay">
-                                  <gl:DueTime>PT0.5S</gl:DueTime>
+                                  <gl:DueTime>PT0.3S</gl:DueTime>
                                 </Combinator>
                               </Expression>
                               <Expression xsi:type="Combinator">
@@ -8412,8 +8422,8 @@ def process(value):
                             <Edges>
                               <Edge From="0" To="1" Label="Source1" />
                               <Edge From="1" To="6" Label="Source2" />
-                              <Edge From="2" To="4" Label="Source1" />
-                              <Edge From="3" To="4" Label="Source2" />
+                              <Edge From="2" To="3" Label="Source1" />
+                              <Edge From="3" To="4" Label="Source1" />
                               <Edge From="4" To="5" Label="Source1" />
                               <Edge From="5" To="6" Label="Source1" />
                               <Edge From="6" To="7" Label="Source1" />
@@ -8446,7 +8456,7 @@ def process(value):
                           </Workflow>
                         </Expression>
                         <Expression xsi:type="rx:SelectMany">
-                          <Name>-1</Name>
+                          <Name>&lt;0</Name>
                           <Workflow>
                             <Nodes>
                               <Expression xsi:type="SubscribeSubject">
@@ -8457,23 +8467,25 @@ def process(value):
                                   <Property Name="DueTime" />
                                 </PropertyMappings>
                               </Expression>
-                              <Expression xsi:type="WorkflowInput">
-                                <Name>Source1</Name>
-                              </Expression>
                               <Expression xsi:type="ExternalizedMapping">
-                                <Property Name="Value" />
+                                <Property Name="Lower" />
+                                <Property Name="Upper" />
                               </Expression>
                               <Expression xsi:type="Combinator">
-                                <Combinator xsi:type="FloatProperty">
-                                  <Value>-1</Value>
+                                <Combinator xsi:type="p1:CreateContinuousUniform">
+                                  <p1:Lower>-1</p1:Lower>
+                                  <p1:Upper>0</p1:Upper>
                                 </Combinator>
+                              </Expression>
+                              <Expression xsi:type="Combinator">
+                                <Combinator xsi:type="p1:Sample" />
                               </Expression>
                               <Expression xsi:type="MulticastSubject">
                                 <Name>Stim_Relative</Name>
                               </Expression>
                               <Expression xsi:type="Combinator">
                                 <Combinator xsi:type="gl:Delay">
-                                  <gl:DueTime>PT0.5S</gl:DueTime>
+                                  <gl:DueTime>PT0.3S</gl:DueTime>
                                 </Combinator>
                               </Expression>
                               <Expression xsi:type="Combinator">
@@ -8486,8 +8498,8 @@ def process(value):
                             <Edges>
                               <Edge From="0" To="1" Label="Source1" />
                               <Edge From="1" To="6" Label="Source2" />
-                              <Edge From="2" To="4" Label="Source1" />
-                              <Edge From="3" To="4" Label="Source2" />
+                              <Edge From="2" To="3" Label="Source1" />
+                              <Edge From="3" To="4" Label="Source1" />
                               <Edge From="4" To="5" Label="Source1" />
                               <Edge From="5" To="6" Label="Source1" />
                               <Edge From="6" To="7" Label="Source1" />
@@ -8879,7 +8891,7 @@ def process(value):
                                 </Workflow>
                               </Expression>
                               <Expression xsi:type="rx:SelectMany">
-                                <Name>-1</Name>
+                                <Name>&lt;0</Name>
                                 <Workflow>
                                   <Nodes>
                                     <Expression xsi:type="SubscribeSubject">
@@ -8890,16 +8902,18 @@ def process(value):
                                         <Property Name="DueTime" />
                                       </PropertyMappings>
                                     </Expression>
-                                    <Expression xsi:type="WorkflowInput">
-                                      <Name>Source1</Name>
-                                    </Expression>
                                     <Expression xsi:type="ExternalizedMapping">
-                                      <Property Name="Value" />
+                                      <Property Name="Lower" />
+                                      <Property Name="Upper" />
                                     </Expression>
                                     <Expression xsi:type="Combinator">
-                                      <Combinator xsi:type="FloatProperty">
-                                        <Value>-1</Value>
+                                      <Combinator xsi:type="p1:CreateContinuousUniform">
+                                        <p1:Lower>-1</p1:Lower>
+                                        <p1:Upper>0</p1:Upper>
                                       </Combinator>
+                                    </Expression>
+                                    <Expression xsi:type="Combinator">
+                                      <Combinator xsi:type="p1:Sample" />
                                     </Expression>
                                     <Expression xsi:type="MulticastSubject">
                                       <Name>Stim_Relative</Name>
@@ -8919,8 +8933,8 @@ def process(value):
                                   <Edges>
                                     <Edge From="0" To="1" Label="Source1" />
                                     <Edge From="1" To="6" Label="Source2" />
-                                    <Edge From="2" To="4" Label="Source1" />
-                                    <Edge From="3" To="4" Label="Source2" />
+                                    <Edge From="2" To="3" Label="Source1" />
+                                    <Edge From="3" To="4" Label="Source1" />
                                     <Edge From="4" To="5" Label="Source1" />
                                     <Edge From="5" To="6" Label="Source1" />
                                     <Edge From="6" To="7" Label="Source1" />
@@ -8953,7 +8967,7 @@ def process(value):
                                 </Workflow>
                               </Expression>
                               <Expression xsi:type="rx:SelectMany">
-                                <Name>1</Name>
+                                <Name>&gt;0</Name>
                                 <Workflow>
                                   <Nodes>
                                     <Expression xsi:type="SubscribeSubject">
@@ -8964,23 +8978,25 @@ def process(value):
                                         <Property Name="DueTime" />
                                       </PropertyMappings>
                                     </Expression>
-                                    <Expression xsi:type="WorkflowInput">
-                                      <Name>Source1</Name>
-                                    </Expression>
                                     <Expression xsi:type="ExternalizedMapping">
-                                      <Property Name="Value" />
+                                      <Property Name="Lower" />
+                                      <Property Name="Upper" />
                                     </Expression>
                                     <Expression xsi:type="Combinator">
-                                      <Combinator xsi:type="FloatProperty">
-                                        <Value>1</Value>
+                                      <Combinator xsi:type="p1:CreateContinuousUniform">
+                                        <p1:Lower>0</p1:Lower>
+                                        <p1:Upper>1</p1:Upper>
                                       </Combinator>
+                                    </Expression>
+                                    <Expression xsi:type="Combinator">
+                                      <Combinator xsi:type="p1:Sample" />
                                     </Expression>
                                     <Expression xsi:type="MulticastSubject">
                                       <Name>Stim_Relative</Name>
                                     </Expression>
                                     <Expression xsi:type="Combinator">
                                       <Combinator xsi:type="gl:Delay">
-                                        <gl:DueTime>PT0.5S</gl:DueTime>
+                                        <gl:DueTime>PT0.3S</gl:DueTime>
                                       </Combinator>
                                     </Expression>
                                     <Expression xsi:type="Combinator">
@@ -8993,8 +9009,8 @@ def process(value):
                                   <Edges>
                                     <Edge From="0" To="1" Label="Source1" />
                                     <Edge From="1" To="6" Label="Source2" />
-                                    <Edge From="2" To="4" Label="Source1" />
-                                    <Edge From="3" To="4" Label="Source2" />
+                                    <Edge From="2" To="3" Label="Source1" />
+                                    <Edge From="3" To="4" Label="Source1" />
                                     <Edge From="4" To="5" Label="Source1" />
                                     <Edge From="5" To="6" Label="Source1" />
                                     <Edge From="6" To="7" Label="Source1" />
@@ -9150,7 +9166,7 @@ def process(value):
                                 </Workflow>
                               </Expression>
                               <Expression xsi:type="rx:SelectMany">
-                                <Name>1</Name>
+                                <Name>&gt;0</Name>
                                 <Workflow>
                                   <Nodes>
                                     <Expression xsi:type="SubscribeSubject">
@@ -9161,16 +9177,18 @@ def process(value):
                                         <Property Name="DueTime" />
                                       </PropertyMappings>
                                     </Expression>
-                                    <Expression xsi:type="WorkflowInput">
-                                      <Name>Source1</Name>
-                                    </Expression>
                                     <Expression xsi:type="ExternalizedMapping">
-                                      <Property Name="Value" />
+                                      <Property Name="Lower" />
+                                      <Property Name="Upper" />
                                     </Expression>
                                     <Expression xsi:type="Combinator">
-                                      <Combinator xsi:type="FloatProperty">
-                                        <Value>1</Value>
+                                      <Combinator xsi:type="p1:CreateContinuousUniform">
+                                        <p1:Lower>0</p1:Lower>
+                                        <p1:Upper>1</p1:Upper>
                                       </Combinator>
+                                    </Expression>
+                                    <Expression xsi:type="Combinator">
+                                      <Combinator xsi:type="p1:Sample" />
                                     </Expression>
                                     <Expression xsi:type="MulticastSubject">
                                       <Name>Stim_Relative</Name>
@@ -9190,8 +9208,8 @@ def process(value):
                                   <Edges>
                                     <Edge From="0" To="1" Label="Source1" />
                                     <Edge From="1" To="6" Label="Source2" />
-                                    <Edge From="2" To="4" Label="Source1" />
-                                    <Edge From="3" To="4" Label="Source2" />
+                                    <Edge From="2" To="3" Label="Source1" />
+                                    <Edge From="3" To="4" Label="Source1" />
                                     <Edge From="4" To="5" Label="Source1" />
                                     <Edge From="5" To="6" Label="Source1" />
                                     <Edge From="6" To="7" Label="Source1" />
@@ -9224,7 +9242,7 @@ def process(value):
                                 </Workflow>
                               </Expression>
                               <Expression xsi:type="rx:SelectMany">
-                                <Name>-1</Name>
+                                <Name>&lt;0</Name>
                                 <Workflow>
                                   <Nodes>
                                     <Expression xsi:type="SubscribeSubject">
@@ -9235,23 +9253,25 @@ def process(value):
                                         <Property Name="DueTime" />
                                       </PropertyMappings>
                                     </Expression>
-                                    <Expression xsi:type="WorkflowInput">
-                                      <Name>Source1</Name>
-                                    </Expression>
                                     <Expression xsi:type="ExternalizedMapping">
-                                      <Property Name="Value" />
+                                      <Property Name="Lower" />
+                                      <Property Name="Upper" />
                                     </Expression>
                                     <Expression xsi:type="Combinator">
-                                      <Combinator xsi:type="FloatProperty">
-                                        <Value>-1</Value>
+                                      <Combinator xsi:type="p1:CreateContinuousUniform">
+                                        <p1:Lower>-1</p1:Lower>
+                                        <p1:Upper>0</p1:Upper>
                                       </Combinator>
+                                    </Expression>
+                                    <Expression xsi:type="Combinator">
+                                      <Combinator xsi:type="p1:Sample" />
                                     </Expression>
                                     <Expression xsi:type="MulticastSubject">
                                       <Name>Stim_Relative</Name>
                                     </Expression>
                                     <Expression xsi:type="Combinator">
                                       <Combinator xsi:type="gl:Delay">
-                                        <gl:DueTime>PT0.5S</gl:DueTime>
+                                        <gl:DueTime>PT0.3S</gl:DueTime>
                                       </Combinator>
                                     </Expression>
                                     <Expression xsi:type="Combinator">
@@ -9264,8 +9284,8 @@ def process(value):
                                   <Edges>
                                     <Edge From="0" To="1" Label="Source1" />
                                     <Edge From="1" To="6" Label="Source2" />
-                                    <Edge From="2" To="4" Label="Source1" />
-                                    <Edge From="3" To="4" Label="Source2" />
+                                    <Edge From="2" To="3" Label="Source1" />
+                                    <Edge From="3" To="4" Label="Source1" />
                                     <Edge From="4" To="5" Label="Source1" />
                                     <Edge From="5" To="6" Label="Source1" />
                                     <Edge From="6" To="7" Label="Source1" />
