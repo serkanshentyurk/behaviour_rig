@@ -2,7 +2,7 @@
 setlocal
 
 REM --- Path to your master Rig_Params.csv ---
-set MASTER_FILE=%USERPROFILE%\Documents\Rig_Params.csv
+set MASTER_FILE=%USERPROFILE%\Desktop\HeadFixedBehavior\Params\Rig_Params.csv
 
 REM --- Path to the file inside the repo ---
 set TARGET_FILE=%~dp0\Params\Rig_Params.csv
