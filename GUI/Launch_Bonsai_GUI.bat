@@ -1,7 +1,11 @@
 @echo off
 setlocal
 
-echo === STARTING SCRIPT ===
+REM --- Path to your master Rig_Params.csv ---
+set MASTER_FILE=%USERPROFILE%\Desktop\HeadFixedBehavior\Params\Rig_Params.csv
+
+REM --- Path to the file inside the repo ---
+set TARGET_FILE=%~dp0\Params\Rig_Params.csv
 
 REM --- Try activating Conda ---
 if exist "%USERPROFILE%\miniconda3\condabin\conda.bat" (
@@ -14,6 +18,27 @@ if exist "%USERPROFILE%\miniconda3\condabin\conda.bat" (
     echo ERROR: Conda not found
     goto end
 )
+
+REM --- Move to the directory of this .bat file (repo root) ---
+cd /d "%~dp0"
+
+REM --- Pull the latest changes ---
+git fetch
+git reset --hard origin/main
+git clean -fd
+
+REM --- Restore the protected file from master location ---
+if exist "%MASTER_FILE%" (
+    copy /Y "%MASTER_FILE%" "%TARGET_FILE%"
+    echo Protected file restored from %MASTER_FILE%.
+) else (
+    echo WARNING: Master file not found at %MASTER_FILE%.
+)
+
+echo Done!
+
+echo === STARTING SCRIPT ===
+
 
 echo Conda activation attempted
 echo Python location:
