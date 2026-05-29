@@ -93,7 +93,7 @@ def overwrite_csv():
               opto_offset_1.get(), opto_offset_2.get(), opto_duration.get(), arduino.get(), stimulation_site.get(), stimulation_type.get(),
               antibias_exp_rate.get(), antibias_window.get(), antibias_sigmoid_slope.get(), agent_sim.get(), agent_performance.get(),
               agent_bias.get(), stim_dur_staircase.get(), stim_dur_staircase_perf_thresh.get(), stim_dur_staircase_step.get(), min_stim_dur.get(),
-              opto_type.get(), zapit_nb_conditions.get(), inter_trial_interval.get(), timeout_duration.get(), response_window.get(),
+              opto_type.get(), conditionNum.get(), inter_trial_interval.get(), timeout_duration.get(), response_window.get(),
               stim_range_min.get(), stim_range_max.get(), go_cue_duration.get(), visualiser_window_size.get(), stable_start.get(), stable_start_window.get(),
               max_trials_consec.get(), stable_stim_dist_boundary.get()
               ,]
@@ -111,9 +111,10 @@ def overwrite_csv():
                  'Opto_Onset_1', 'Opto_Onset_2', 'Opto_Offset_1', 'Opto_Offset_2', 'Opto_Duration', 'Arduino', 
                  'Stimulation_Site', 'Stimulation_Type', 'AntiBias_Exp_Rate', 'AntiBias_Window', 'AntiBias_Sigmoid_Slope',
                  'Agent_Sim', 'Agent_Performance', 'Agent_Bias', 'Stim_Dur_Staircase', 'Stim_Dur_Staircase_Perf_Thresh', 'Stim_Dur_Staircase_Step',
-                 'Min_Stim_Dur', 'Opto_Type', 'Zapit_Nb_Conditions', 'Inter_Trial_Interval', 'Timeout_Duration', 'Response_Window',
+                 'Min_Stim_Dur', 'Opto_Type', 'Laser_On', 'conditionNum'
+                 'Inter_Trial_Interval', 'Timeout_Duration', 'Response_Window',
                  'Stim_Range_Min', 'Stim_Range_Max', 'Go_Cue_Duration', 'Visualiser_Window_Size', 'Stable_Start', 'Stable_Start_Window',
-                    'Max_Trials_Consec', 'Stable_Stim_Dist_Boundary'
+                 'Max_Trials_Consec', 'Stable_Stim_Dist_Boundary'
                     ,],
                 params)])
 
@@ -146,7 +147,7 @@ def load_csv():
                  'Sound_Air_Puff_Contingency', 'Sound_Contingency', 'Opto_ON', 'Perc_Opto_Trials', 'Light_Freq (Hz)', 
                  'Opto_Onset_1', 'Opto_Onset_2', 'Opto_Offset_1', 'Opto_Offset_2', 'Opto_Duration', 'Arduino', 'Stimulation_Site', 'Stimulation_Type', 
                  'AntiBias_Exp_Rate', 'AntiBias_Window', 'AntiBias_Sigmoid_Slope', 'Agent_Sim', 'Agent_Performance', 'Agent_Bias', 'Stim_Dur_Staircase', 
-                 'Stim_Dur_Staircase_Perf_Thresh', 'Stim_Dur_Staircase_Step', 'Min_Stim_Dur', 'Opto_Type', 'Zapit_Nb_Conditions', 'Inter_Trial_Interval', 
+                 'Stim_Dur_Staircase_Perf_Thresh', 'Stim_Dur_Staircase_Step', 'Min_Stim_Dur', 'Opto_Type', 'conditionNum','Laser_On','Inter_Trial_Interval', 
                  'Timeout_Duration', 'Response_Window', 'Stim_Range_Min', 'Stim_Range_Max', 'Go_Cue_Duration', 'Visualiser_Window_Size',
                  'Stable_Start', 'Stable_Start_Window', 'Max_Trials_Consec', 'Stable_Stim_Dist_Boundary',]
         vars_and_dropdowns = zip(params, [protocol, stage, distribution, sound_duration, nb_of_stim, stim_type, antibias, emulator,
@@ -154,7 +155,7 @@ def load_csv():
                                           sound_contingency, opto_on, perc_opto_trials, light_freq, opto_onset_1, opto_onset_2, opto_offset_1, opto_offset_2,
                                           opto_duration, arduino, stimulation_site, stimulation_type, antibias_exp_rate, 
                                           antibias_window, antibias_sigmoid_slope, agent_sim, agent_performance, agent_bias, stim_dur_staircase,
-                                          stim_dur_staircase_perf_thresh, stim_dur_staircase_step, min_stim_dur, opto_type, zapit_nb_conditions,
+                                          stim_dur_staircase_perf_thresh, stim_dur_staircase_step, min_stim_dur, opto_type, conditionNum, laser_on,
                                           inter_trial_interval, timeout_duration, response_window, stim_range_min, stim_range_max, go_cue_duration, visualiser_window_size,
                                           stable_start, stable_start_window,
                                           max_trials_consec, stable_stim_dist_boundary
@@ -168,7 +169,9 @@ def load_csv():
                                   stimulation_type_dropdown, antibias_exp_rate_dropdown, antibias_window_dropdown, antibias_sigmoid_slope_dropdown,
                                   agent_sim_dropdown, agent_performance_dropdown, agent_bias_dropdown, stim_dur_staircase_dropdown,
                                   stim_dur_staircase_perf_thresh_dropdown, stim_dur_staircase_step_dropdown, min_stim_dur_dropdown, 
-                                  opto_type_dropdown, zapit_nb_conditions_dropdown, inter_trial_interval_dropdown, timeout_duration_dropdown, response_window_dropdown,
+                                  opto_type_dropdown, conditionNum_dropdown, 
+                                  laser_on_dropdown,
+                                  inter_trial_interval_dropdown, timeout_duration_dropdown, response_window_dropdown,
                                   stim_range_min_dropdown, stim_range_max_dropdown, go_cue_duration_dropdown, visualiser_window_size_dropdown,
                                   stable_start_dropdown, stable_start_window_dropdown,
                                   max_trials_consec_dropdown, stable_stim_dist_boundary_dropdown
@@ -188,13 +191,13 @@ def load_csv():
 
         for param, var, dropdown in vars_and_dropdowns:
             value = subj_params[param].values[0]
-            if param in ['Stage', 'Nb_Of_Stim', 'AntiBias_Window', 'Zapit_Nb_Conditions', 'Stim_Range_Min', 
+            if param in ['Stage', 'Nb_Of_Stim', 'AntiBias_Window', 'conditionNum', 'Stim_Range_Min', 
                          'Stim_Range_Max', 'Visualiser_Window_Size', 'Stable_Start_Window', 'Max_Trials_Consec']:
                 try:
                     value = int(value)
                 except:
                     pass
-            elif param in ['Opto_ON', 'Speaker_Calib' , 'AntiBias', 'Emulator', 'Arduino', 
+            elif param in ['Opto_ON', 'Laser_On', 'Speaker_Calib' , 'AntiBias', 'Emulator', 'Arduino', 
                            'Show_Contingency_Switches', 'Agent_Sim', 'Stim_Dur_Staircase', 'Stable_Start']:
                 try:
                     value = str(value)
@@ -414,7 +417,7 @@ protocol, protocol_label, protocol_dropdown = create_label_dropdown(parent_frame
 stage, stage_label, stage_dropdown = create_label_dropdown(parent_frame = beh_frame_1, 
                                                            label_text = "Stage:", 
                                                            option_list = ['Habituation', 'Lick_To_Release', 'Three_And_Three', 
-                                                                          'Full_Task_Disc', 'Full_Task_Cont', 'Habituation_cont'], 
+                                                                          'Full_Task_Disc', 'Full_Task_Cont', 'Habituation_cont', 'Lick_To_Release_cont'], 
                                                            y_pos = 2)
 
 # Rule
@@ -724,11 +727,6 @@ stimulation_type, stimulation_type_label, stimulation_type_dropdown = create_lab
                                                                                             option_list = ['NaN', 'Unilateral_Left', 
                                                                                                            'Unilateral_Right', 'Bilateral'],
                                                                                             y_pos = 8)
-# # Opto duration
-# opto_duration, opto_duration_label, opto_duration_dropdown = create_label_dropdown(parent_frame = stim_frame_1, 
-#                                                                                    label_text = "Duration:", 
-#                                                                                    option_list = np.arange(0, 1010, 100), 
-#                                                                                    y_pos = 9) 
 
 # make stim_frame_2
 stim_frame_2 = tk.Frame(stim_tab_2, bg='black')
@@ -747,10 +745,19 @@ opto_type, opto_type_label, opto_type_dropdown = create_label_dropdown(parent_fr
                                                                        y_pos = 1)
 
 # Zapit nb conditions
-zapit_nb_conditions, zapit_nb_conditions_label, zapit_nb_conditions_dropdown = create_label_dropdown(parent_frame = stim_frame_2, 
+conditionNum, conditionNum_label, conditionNum_dropdown = create_label_dropdown(parent_frame = stim_frame_2, 
                                                                                                     label_text = "Zapit Nb \n Conditions:", 
                                                                                                     option_list = ['NaN', 1, 2, 3, 4, 5, 6, 7, 8, 9, 10], 
                                                                                                     y_pos = 2)
+
+#Laser on 
+
+laser_on, laser_on_label, laser_on_dropdown = create_label_dropdown(parent_frame = stim_frame_2,
+                                                                    label_text = "Laser On:",
+                                                                    option_list = ['NaN', 'True', 'False'],
+                                                                    y_pos = 3)
+
+
 
 root.mainloop()
 

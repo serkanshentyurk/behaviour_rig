@@ -2967,8 +2967,8 @@ def process(value):
               <Name>Subject_Params</Name>
             </Expression>
             <Expression xsi:type="ipy:PythonTransform">
-              <ipy:Name>Zapit_Nb_Conditions</ipy:Name>
-              <ipy:Script>param = 'Zapit_Nb_Conditions' 
+              <ipy:Name>conditionNum</ipy:Name>
+              <ipy:Script>param = 'conditionNum' 
 param_type = float
 @returns(param_type)
 def process(value):
@@ -2987,7 +2987,7 @@ def process(value):
               </Combinator>
             </Expression>
             <Expression xsi:type="rx:BehaviorSubject">
-              <Name>Zapit_Nb_Conditions</Name>
+              <Name>conditionNum</Name>
             </Expression>
             <Expression xsi:type="Combinator">
               <Combinator xsi:type="rx:CombineLatest" />
@@ -3373,6 +3373,79 @@ def process(value):
             </Expression>
             <Expression xsi:type="rx:BehaviorSubject">
               <Name>Max_Trials_Consec</Name>
+            </Expression>
+            <Expression xsi:type="Combinator">
+              <Combinator xsi:type="rx:CombineLatest" />
+            </Expression>
+            <Expression xsi:type="SubscribeSubject">
+              <Name>Subject_Params</Name>
+            </Expression>
+            <Expression xsi:type="ipy:PythonTransform">
+              <ipy:Name>Laser_On</ipy:Name>
+              <ipy:Script>param = 'Laser_On' 
+param_type = str
+@returns(param_type)
+def process(value):
+  param_start = value.find(param + ": ") + len(param + ": ")
+  param_end = value.find(",", param_start)
+  return(param_type(value[param_start:param_end]))</ipy:Script>
+            </Expression>
+            <Expression xsi:type="Equal">
+              <Operand xsi:type="StringProperty">
+                <Value>True</Value>
+              </Operand>
+            </Expression>
+            <Expression xsi:type="rx:Condition">
+              <Workflow>
+                <Nodes>
+                  <Expression xsi:type="WorkflowInput">
+                    <Name>Source1</Name>
+                  </Expression>
+                  <Expression xsi:type="WorkflowOutput" />
+                </Nodes>
+                <Edges>
+                  <Edge From="0" To="1" Label="Source1" />
+                </Edges>
+              </Workflow>
+            </Expression>
+            <Expression xsi:type="Combinator">
+              <Combinator xsi:type="BooleanProperty">
+                <Value>true</Value>
+              </Combinator>
+            </Expression>
+            <Expression xsi:type="Equal">
+              <Operand xsi:type="StringProperty">
+                <Value>False</Value>
+              </Operand>
+            </Expression>
+            <Expression xsi:type="rx:Condition">
+              <Workflow>
+                <Nodes>
+                  <Expression xsi:type="WorkflowInput">
+                    <Name>Source1</Name>
+                  </Expression>
+                  <Expression xsi:type="WorkflowOutput" />
+                </Nodes>
+                <Edges>
+                  <Edge From="0" To="1" Label="Source1" />
+                </Edges>
+              </Workflow>
+            </Expression>
+            <Expression xsi:type="Combinator">
+              <Combinator xsi:type="BooleanProperty">
+                <Value>false</Value>
+              </Combinator>
+            </Expression>
+            <Expression xsi:type="Combinator">
+              <Combinator xsi:type="rx:Merge" />
+            </Expression>
+            <Expression xsi:type="rx:BehaviorSubject">
+              <Name>Laser_On</Name>
+            </Expression>
+            <Expression xsi:type="Combinator">
+              <Combinator xsi:type="StringProperty">
+                <Value>Opto_ON</Value>
+              </Combinator>
             </Expression>
             <Expression xsi:type="Combinator">
               <Combinator xsi:type="rx:CombineLatest" />
@@ -3788,7 +3861,7 @@ def process(value):
             <Edge From="313" To="314" Label="Source1" />
             <Edge From="314" To="315" Label="Source2" />
             <Edge From="315" To="316" Label="Source5" />
-            <Edge From="316" To="393" Label="Source2" />
+            <Edge From="316" To="405" Label="Source2" />
             <Edge From="317" To="318" Label="Source1" />
             <Edge From="318" To="319" Label="Source1" />
             <Edge From="319" To="320" Label="Source1" />
@@ -3832,7 +3905,7 @@ def process(value):
             <Edge From="357" To="358" Label="Source2" />
             <Edge From="358" To="359" Label="Source7" />
             <Edge From="359" To="360" Label="Source4" />
-            <Edge From="360" To="393" Label="Source1" />
+            <Edge From="360" To="405" Label="Source1" />
             <Edge From="361" To="375" Label="Source1" />
             <Edge From="362" To="381" Label="Source1" />
             <Edge From="363" To="385" Label="Source1" />
@@ -3848,28 +3921,41 @@ def process(value):
             <Edge From="372" To="373" Label="Source2" />
             <Edge From="373" To="374" Label="Source1" />
             <Edge From="374" To="375" Label="Source2" />
-            <Edge From="375" To="392" Label="Source1" />
+            <Edge From="375" To="404" Label="Source1" />
             <Edge From="376" To="377" Label="Source1" />
             <Edge From="377" To="378" Label="Source1" />
             <Edge From="378" To="379" Label="Source1" />
             <Edge From="379" To="380" Label="Source1" />
             <Edge From="380" To="381" Label="Source2" />
-            <Edge From="381" To="392" Label="Source2" />
+            <Edge From="381" To="404" Label="Source2" />
             <Edge From="382" To="383" Label="Source1" />
             <Edge From="383" To="384" Label="Source1" />
             <Edge From="384" To="385" Label="Source2" />
-            <Edge From="385" To="392" Label="Source3" />
+            <Edge From="385" To="404" Label="Source3" />
             <Edge From="386" To="387" Label="Source1" />
             <Edge From="387" To="388" Label="Source1" />
             <Edge From="388" To="389" Label="Source1" />
             <Edge From="389" To="390" Label="Source1" />
             <Edge From="390" To="391" Label="Source2" />
-            <Edge From="391" To="392" Label="Source4" />
-            <Edge From="392" To="393" Label="Source3" />
+            <Edge From="391" To="404" Label="Source4" />
+            <Edge From="392" To="393" Label="Source1" />
             <Edge From="393" To="394" Label="Source1" />
+            <Edge From="393" To="397" Label="Source1" />
             <Edge From="394" To="395" Label="Source1" />
             <Edge From="395" To="396" Label="Source1" />
-            <Edge From="396" To="397" Label="Source1" />
+            <Edge From="396" To="400" Label="Source1" />
+            <Edge From="397" To="398" Label="Source1" />
+            <Edge From="398" To="399" Label="Source1" />
+            <Edge From="399" To="400" Label="Source2" />
+            <Edge From="400" To="401" Label="Source1" />
+            <Edge From="401" To="403" Label="Source2" />
+            <Edge From="402" To="403" Label="Source1" />
+            <Edge From="403" To="404" Label="Source5" />
+            <Edge From="404" To="405" Label="Source3" />
+            <Edge From="405" To="406" Label="Source1" />
+            <Edge From="406" To="407" Label="Source1" />
+            <Edge From="407" To="408" Label="Source1" />
+            <Edge From="408" To="409" Label="Source1" />
           </Edges>
         </Workflow>
       </Expression>
@@ -4235,7 +4321,7 @@ def process(value):
                       <harp:VisualIndicators>On</harp:VisualIndicators>
                       <harp:Heartbeat>Disable</harp:Heartbeat>
                       <harp:IgnoreErrors>false</harp:IgnoreErrors>
-                      <harp:PortName>COM6</harp:PortName>
+                      <harp:PortName>COM4</harp:PortName>
                     </Combinator>
                   </Expression>
                   <Expression xsi:type="Combinator">
@@ -4664,7 +4750,7 @@ def process(value):
                       <harp:VisualIndicators>On</harp:VisualIndicators>
                       <harp:Heartbeat>Disable</harp:Heartbeat>
                       <harp:IgnoreErrors>false</harp:IgnoreErrors>
-                      <harp:PortName>COM8</harp:PortName>
+                      <harp:PortName>COM2</harp:PortName>
                     </Combinator>
                   </Expression>
                   <Expression xsi:type="Combinator">
@@ -6739,7 +6825,7 @@ def process(value):
                     <Selector>Item2.Item1</Selector>
                   </Expression>
                   <Expression xsi:type="SubscribeSubject">
-                    <Name>Zapit_Nb_Conditions</Name>
+                    <Name>conditionNum</Name>
                   </Expression>
                   <Expression xsi:type="Combinator">
                     <Combinator xsi:type="rx:CombineLatest" />
@@ -6767,7 +6853,7 @@ def process(value):
                     <Selector>Item2.Item1</Selector>
                   </Expression>
                   <Expression xsi:type="SubscribeSubject">
-                    <Name>Zapit_Nb_Conditions</Name>
+                    <Name>conditionNum</Name>
                   </Expression>
                   <Expression xsi:type="Combinator">
                     <Combinator xsi:type="rx:CombineLatest" />
@@ -29291,12 +29377,28 @@ def process(value):
                           <Name>Zapit</Name>
                         </Expression>
                         <Expression xsi:type="WorkflowOutput" />
+                        <Expression xsi:type="SubscribeSubject">
+                          <Name>Condition_Num</Name>
+                        </Expression>
+                        <Expression xsi:type="PropertySource" TypeArguments="IntProperty,sys:Int32">
+                          <MemberName>conditionNum</MemberName>
+                          <Value>1</Value>
+                        </Expression>
+                        <Expression xsi:type="SubscribeSubject">
+                          <Name>Laser_On</Name>
+                        </Expression>
+                        <Expression xsi:type="PropertySource" TypeArguments="WorkflowProperty(sys:Boolean),sys:Boolean">
+                          <MemberName>laser_ON</MemberName>
+                          <Value>true</Value>
+                        </Expression>
                       </Nodes>
                       <Edges>
                         <Edge From="0" To="1" Label="Source1" />
                         <Edge From="1" To="2" Label="Source1" />
                         <Edge From="2" To="3" Label="Source1" />
                         <Edge From="3" To="4" Label="Source1" />
+                        <Edge From="5" To="6" Label="Source1" />
+                        <Edge From="7" To="8" Label="Source1" />
                       </Edges>
                     </Workflow>
                   </Expression>
