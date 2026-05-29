@@ -746,7 +746,7 @@ opto_type, opto_type_label, opto_type_dropdown = create_label_dropdown(parent_fr
 
 # Zapit nb conditions
 conditionNum, conditionNum_label, conditionNum_dropdown = create_label_dropdown(parent_frame = stim_frame_2, 
-                                                                                                    label_text = "Zapit Nb \n Conditions:", 
+                                                                                                    label_text = "Nb of Conditions:", 
                                                                                                     option_list = ['NaN', 1, 2, 3, 4, 5, 6, 7, 8, 9, 10], 
                                                                                                     y_pos = 2)
 
