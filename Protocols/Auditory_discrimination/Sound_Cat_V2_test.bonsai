@@ -2960,7 +2960,7 @@ def process(value):
             </Expression>
             <Expression xsi:type="Combinator">
               <Combinator xsi:type="StringProperty">
-                <Value>Zapit_Nb_Conditions</Value>
+                <Value>conditionNum</Value>
               </Combinator>
             </Expression>
             <Expression xsi:type="SubscribeSubject">
@@ -2969,7 +2969,7 @@ def process(value):
             <Expression xsi:type="ipy:PythonTransform">
               <ipy:Name>conditionNum</ipy:Name>
               <ipy:Script>param = 'conditionNum' 
-param_type = float
+param_type = int
 @returns(param_type)
 def process(value):
   param_start = value.find(param + ": ") + len(param + ": ")
@@ -3444,7 +3444,7 @@ def process(value):
             </Expression>
             <Expression xsi:type="Combinator">
               <Combinator xsi:type="StringProperty">
-                <Value>Opto_ON</Value>
+                <Value>Laser_On</Value>
               </Combinator>
             </Expression>
             <Expression xsi:type="Combinator">
