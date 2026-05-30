@@ -30,8 +30,8 @@ from pathlib import Path
 
 repo_path = os.path.dirname('/'.join(os.getcwd().split('\\')))
 protocols_path = repo_path + '/Protocols/' 
-subject_params_file = repo_path + '/Params/Subject_Params.csv'
-mouse_room_params_path = repo_path + '/Params/Mouse_Room_Params.xlsx'
+subject_params_file = repo_path + '/Params/Subject_Params_test.csv'
+mouse_room_params_path = repo_path + '/Params/Mouse_Room_Params_test.xlsx'
 
 user_profile  = ('/'.join(os.environ['USERPROFILE'].split('\\')))
 bonsai_path = user_profile + '/AppData/Local/Bonsai/Bonsai.exe'
