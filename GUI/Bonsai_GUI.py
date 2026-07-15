@@ -105,7 +105,7 @@ def overwrite_csv():
 
     # Join input values into a single string with commas and a trailing comma
     row = ", ".join([f"{name}: {value}" for name, value in zip(
-                ['Subject', 'Protocol', 'Stage', 'Distribution', 'Sound_Duration', 'Nb_Of_Stim', 'Stim_Type', 
+                ['Animal_ID', 'Protocol', 'Stage', 'Distribution', 'Sound_Duration', 'Nb_Of_Stim', 'Stim_Type', 
                  'AntiBias', 'Emulator', 'Air_Puff_Contingency_Rule', 'Show_Contingency_Switches', 'Working_Memory_Type', 
                  'Sound_Air_Puff_Contingency', 'Sound_Contingency', 'Opto_ON', 'Perc_Opto_Trials', 'Light_Freq (Hz)', 
                  'Opto_Onset_1', 'Opto_Onset_2', 'Opto_Offset_1', 'Opto_Offset_2', 'Opto_Duration', 'Arduino', 
@@ -176,7 +176,7 @@ def load_csv():
 
         values = [subj] + [subj_params[param].values[0] for param in params]
         row = ", ".join([f"{name}: {value}" for name, value in zip(
-                ['Subject'] + params, 
+                ['Animal_ID'] + params, 
                 values)])
 
         # Add trailing comma to the end of the row
