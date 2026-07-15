@@ -27,6 +27,5 @@ obj/
 .bonsai/Settings/*.editor
 
 # --- OS / notebook junk ---
-.DS_Store
 Thumbs.db
 .ipynb_checkpoints/
