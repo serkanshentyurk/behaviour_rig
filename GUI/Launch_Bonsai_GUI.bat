@@ -1,13 +1,7 @@
 @echo off
 setlocal
 
-REM --- Path to your master Rig_Params.csv ---
-set MASTER_FILE=%USERPROFILE%\Desktop\HeadFixedBehavior\Params\Rig_Params.csv
-
-REM --- Path to the file inside the repo ---
-set TARGET_FILE=%~dp0\Params\Rig_Params.csv
-
-REM --- Try activating Conda ---
+REM --- Activate the conda env ---
 if exist "%USERPROFILE%\miniconda3\condabin\conda.bat" (
     echo Found Miniconda
     call "%USERPROFILE%\miniconda3\condabin\conda.bat" activate gui_env
@@ -19,38 +13,22 @@ if exist "%USERPROFILE%\miniconda3\condabin\conda.bat" (
     goto end
 )
 
-REM --- Move to the directory of this .bat file (repo root) ---
+REM --- Move to the repo (this .bat lives in GUI/, so go up one) ---
 cd /d "%~dp0"
 
-REM --- Pull the latest changes ---
-git fetch
+REM --- Sync to server: take origin/main exactly, discard local edits to
+REM     TRACKED files. Ignored files (Rig_Params.csv, Subject_Params.csv) are
+REM     left untouched, so this rig keeps its generated params. No "git clean":
+REM     that would delete untracked files, which we never want on a rig.
+git fetch origin
 git reset --hard origin/main
-git clean -fd
 
-REM --- Restore the protected file from master location ---
-if exist "%MASTER_FILE%" (
-    copy /Y "%MASTER_FILE%" "%TARGET_FILE%"
-    echo Protected file restored from %MASTER_FILE%.
-) else (
-    echo WARNING: Master file not found at %MASTER_FILE%.
-)
-
-echo Done!
-
-echo === STARTING SCRIPT ===
-
-
-echo Conda activation attempted
-echo Python location:
+echo === STARTING GUI ===
 where python
 python --version
 
-REM --- Move to script directory ---
 cd /d "%~dp0"
 echo Current directory: %CD%
-
-REM --- Run Python ---
-echo Running Python script...
 python "Bonsai_GUI.py"
 echo Python exited with code %ERRORLEVEL%
 

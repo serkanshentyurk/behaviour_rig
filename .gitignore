@@ -15,6 +15,7 @@ __pycache__/
 # Ignore the Data folder
 Data/
 Params/Rig_Params.csv
+Params/Subject_Params.csv
 
 # --- Visual Studio / MSBuild: regenerated on build ---
 bin/

@@ -52,7 +52,7 @@ rig_params_file = repo_path + "/Params/Rig_Params.csv"
 # Order of columns written to Rig_Params.csv. Every one is emitted even when blank
 # (e.g. "Harp_Beh_Port: ,") so the Bonsai parser's find() always succeeds; a blank
 # yields an empty string, never a wrong slice.
-RIG_PARAM_COLS = ['Room_ID', 'Rig_ID', 'Harp_Beh_Port', 'Sound_Card_Port',
+RIG_PARAM_COLS = ['Room_ID', 'Rig_ID', 'Arduino', 'Harp_Beh_Port', 'Sound_Card_Port',
                   'Left_Valve_Time', 'Right_Valve_Time', 'Speaker_Slope',
                   'Speaker_Y_Intercept', 'Arduino_Port', 'Arduino_Mega_Port']
 
@@ -444,7 +444,6 @@ SPEC = [
     ('Opto_Offset_1',                 'Opto_Offset_1',                  "Offset_1:",                         EPOCHS,                                  None,  'Opto Timing'),
     ('Opto_Offset_2',                 'Opto_Offset_2',                  "Offset_2:",                         EPOCHS,                                  None,  'Opto Timing'),
     ('Opto_Duration',                 'Opto_Duration',                  "Duration:",                         np.arange(0, 1010, 100),                 None,  'Opto Timing'),
-    ('Arduino',                       'Arduino',                        "Arduino:",                          ['NaN', 'True', 'False'],                str,   'Debug'),
     ('Stimulation_Site',              'Stimulation_Site',               "Stim Site:",                        ['NaN', 'PPC', 'ACC', 'ALM'],            None,  'Opto'),
     ('Stimulation_Type',              'Stimulation_Type',               "Stim Type:",                        ['NaN', 'Unilateral_Left', 'Unilateral_Right', 'Bilateral'], None, 'Opto'),
     ('AntiBias_Exp_Rate',             'AntiBias_Exp_Rate',              "AB_Exp_Rate:",                      [np.nan, 0.5, 1.0, 1.5, 2.0, 2.5, 3.0],  None,  'Anti-bias'),
