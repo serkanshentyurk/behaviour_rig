@@ -1,0 +1,11 @@
+name: gui_env
+channels:
+  - conda-forge
+dependencies:
+  - python=3.10
+  - pandas
+  - openpyxl
+  - psutil
+  - pip
+  - pip:
+    - python-osc==1.8.1
