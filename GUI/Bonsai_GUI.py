@@ -497,7 +497,6 @@ SPEC = [
     ('Opto_Offset_1',                 'Opto_Offset_1',                  "Offset_1:",                         EPOCHS,                                  None,  'Opto Timing'),
     ('Opto_Offset_2',                 'Opto_Offset_2',                  "Offset_2:",                         EPOCHS,                                  None,  'Opto Timing'),
     ('Opto_Duration',                 'Opto_Duration',                  "Duration:",                         np.arange(0, 1010, 100),                 None,  'Opto Timing'),
-    ('Arduino',                       'Arduino',                        "Arduino:",                          ['NaN', 'True', 'False'],                str,   'Debug'),
     ('Stimulation_Site',              'Stimulation_Site',               "Stim Site:",                        ['NaN', 'PPC', 'ACC', 'ALM'],            None,  'Opto'),
     ('Stimulation_Type',              'Stimulation_Type',               "Stim Type:",                        ['NaN', 'Unilateral_Left', 'Unilateral_Right', 'Bilateral'], None, 'Opto'),
     ('AntiBias_Exp_Rate',             'AntiBias_Exp_Rate',              "AB_Exp_Rate:",                      [np.nan, 0.5, 1.0, 1.5, 2.0, 2.5, 3.0],  None,  'Anti-bias'),
