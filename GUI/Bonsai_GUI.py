@@ -52,7 +52,7 @@ rig_params_file = repo_path + "/Params/Rig_Params.csv"
 # Order of columns written to Rig_Params.csv. Every one is emitted even when blank
 # (e.g. "Harp_Beh_Port: ,") so the Bonsai parser's find() always succeeds; a blank
 # yields an empty string, never a wrong slice.
-RIG_PARAM_COLS = ['Room_ID', 'Rig_ID', 'Arduino', 'Harp_Beh_Port', 'Sound_Card_Port',
+RIG_PARAM_COLS = ['Room_ID', 'Rig_ID', 'Harp_Beh_Port', 'Sound_Card_Port',
                   'Left_Valve_Time', 'Right_Valve_Time', 'Speaker_Slope',
                   'Speaker_Y_Intercept', 'Arduino_Port', 'Arduino_Mega_Port']
 
@@ -135,6 +135,30 @@ def get_mapped_drives():
 import platform
 IS_MAC = platform.system() == 'Darwin'
 
+# ---- palette (muted, coherent; button colours still encode state) ----------
+COL_OK      = '#4c956c'   # go / loaded / ready        (muted green)
+COL_WARN    = '#e8a44c'   # needs attention / unsaved  (amber)
+COL_STOP    = '#c44536'   # running / kill             (brick red)
+COL_IDLE    = '#9aa0a6'   # disabled / not-ready       (grey)
+COL_DIRTY   = '#f2cc55'   # a field just changed       (soft yellow)
+COL_ACCENT  = '#2f3e46'   # headers / selected tab text
+COL_MUTE    = '#8a9199'   # secondary text
+# Backgrounds: the rigs run light mode, so give them an intentional off-white
+# card-on-canvas look. On macOS leave them as None so the app follows the
+# system theme instead of clashing with a dark title bar.
+if IS_MAC:
+    CANVAS = None         # window / tab strip
+    CARD   = None         # the content panel
+else:
+    CANVAS = '#eef1f4'    # soft cool grey
+    CARD   = '#ffffff'    # white card the fields sit on
+FONT_UI     = ('Segoe UI', 12)
+FONT_LABEL  = ('Segoe UI', 12)
+FONT_BTN    = ('Segoe UI', 12, 'bold')
+FONT_TAB    = ('Segoe UI', 11)
+FONT_RIG    = ('Segoe UI', 12, 'bold')
+
+
 class State:
     loaded  = False   # params have been Loaded or Overwritten at least once
     dirty   = False   # a widget changed since then: the CSV no longer matches
@@ -145,18 +169,27 @@ class State:
 S = State()
 
 
+def _shade(hex_colour, factor=0.88):
+    """Darken a #rrggbb colour for the active/pressed state."""
+    try:
+        r = int(hex_colour[1:3], 16); g = int(hex_colour[3:5], 16); b = int(hex_colour[5:7], 16)
+        return '#%02x%02x%02x' % (int(r*factor), int(g*factor), int(b*factor))
+    except Exception:
+        return hex_colour
+
 def _paint(btn, colour):
     """macOS Aqua ignores Button bg; highlightbackground is the one that tints."""
     if IS_MAC:
-        btn.config(highlightbackground=colour, activebackground=colour)
+        btn.config(highlightbackground=colour, activebackground=colour, fg='#ffffff')
     else:
-        btn.config(bg=colour)
+        btn.config(bg=colour, activebackground=_shade(colour), fg='#ffffff',
+                   disabledforeground='#eef1f4')
 
 
 def refresh_buttons():
     """Single place where state -> appearance. Nothing else touches colours."""
     if S.running:
-        _paint(run_protocol_button, '#c62828')
+        _paint(run_protocol_button, COL_STOP)
         run_protocol_button.config(text='End Session')
         load_button.config(state='disabled')
         overwrite_button.config(state='disabled')
@@ -165,10 +198,10 @@ def refresh_buttons():
         load_button.config(state='active')
         overwrite_button.config(state='active')
         ready = S.loaded and not S.dirty
-        _paint(run_protocol_button, '#2e7d32' if ready else '#9e9e9e')
+        _paint(run_protocol_button, COL_OK if ready else COL_IDLE)
 
-    _paint(load_button,      '#2e7d32' if S.loaded else '#ef6c00')
-    _paint(overwrite_button, '#ef6c00' if (S.dirty or not S.loaded) else '#2e7d32')
+    _paint(load_button,      COL_OK if S.loaded else COL_WARN)
+    _paint(overwrite_button, COL_WARN if (S.dirty or not S.loaded) else COL_OK)
 
     status_label.config(
         text = 'Bonsai running'                    if S.running   else
@@ -252,7 +285,7 @@ def load_csv():
                 except Exception:
                     pass
             var.set(value)
-            _paint(dropdown, '#fdd835')
+            _paint(dropdown, COL_DIRTY)
 
         S.loaded = True
         S.dirty  = False
@@ -305,7 +338,7 @@ def camera():
     if S.camera_on:
         kill_bonsai()
         S.camera_on = False
-        _paint(camera_button, '#2e7d32')
+        _paint(camera_button, COL_OK)
         return
     camera_path = repo_path + '/Params/Camera.bonsai'
     if not os.path.exists(camera_path):
@@ -313,7 +346,7 @@ def camera():
         return
     process = subprocess.Popen([bonsai_path, camera_path, '--start'])
     S.camera_on = True
-    _paint(camera_button, '#c62828')
+    _paint(camera_button, COL_STOP)
 
 
 def flush_rig():
@@ -321,7 +354,7 @@ def flush_rig():
     if S.flush_on:
         kill_bonsai()
         S.flush_on = False
-        _paint(flush_rig_button, '#2e7d32')
+        _paint(flush_rig_button, COL_OK)
         return
     flush_rig_path = repo_path + '/Params/Flush_Rig.bonsai'
     if not os.path.exists(flush_rig_path):
@@ -329,7 +362,7 @@ def flush_rig():
         return
     process = subprocess.Popen([bonsai_path, flush_rig_path, '--start'])
     S.flush_on = True
-    _paint(flush_rig_button, '#c62828')
+    _paint(flush_rig_button, COL_STOP)
 
 
 def push_data():
@@ -360,14 +393,18 @@ def create_label_dropdown(parent_frame, label_text, option_list, y_pos):
     var = tk.StringVar()
     var.set("Select")
 
+    _lbl_bg = {'bg': CARD} if CARD else {}
     label = tk.Label(parent_frame, text=label_text.replace('\n', ''), width=24,
-                     font=my_font, anchor='e', justify='right')
+                     font=FONT_LABEL, fg=COL_ACCENT, anchor='e', justify='right', **_lbl_bg)
     label.grid(row=y_pos, column=0, padx=(10, 14), pady=5, sticky='e')
 
     dropdown = tk.OptionMenu(parent_frame, var, *option_list,
-                             command=lambda x: (_paint(dropdown, '#fdd835'), mark_dirty()))
+                             command=lambda x: (_paint(dropdown, COL_DIRTY), mark_dirty()))
     dropdown.grid(row=y_pos, column=1, padx=10, pady=5, sticky='w')
-    dropdown.config(height=1, width=16, font=my_font, highlightthickness=0)
+    dropdown.config(height=1, width=16, font=FONT_UI, relief='flat',
+                    bg='#f4f6f7', activebackground='#e4e7ea',
+                    highlightthickness=1, highlightbackground='#c8ccd0',
+                    borderwidth=0)
 
     return var, label, dropdown
 
@@ -389,20 +426,36 @@ def create_label_dropdown(parent_frame, label_text, option_list, y_pos):
 
 root = tk.Tk()
 root.title("Bonsai Launcher GUI")
-root.geometry("900x760")
+if CANVAS: root.config(bg=CANVAS)
+root.geometry("880x720")
 root.minsize(860, 620)
 
 # The action bar packs FIRST, anchored bottom, so it reserves its strip before
 # the notebook expands. No fill='x' - a shrink-to-fit frame is centred by pack.
-action_frame = tk.Frame(root)
+action_frame = tk.Frame(root, bg=CANVAS) if CANVAS else tk.Frame(root)
 action_frame.pack(side='bottom', pady=10)
 
 notebook = ttk.Notebook(root)
 notebook.pack(side='top', pady=10, padx=10, fill='both', expand=True)
 
 style = ttk.Style()
-style.configure('TNotebook.Tab', font=('TkDefaultFont', 11), padding=[8, 4])
-my_font = font.Font(size=13)
+try:
+    style.theme_use('clam')
+except Exception:
+    pass
+
+_canvas = CANVAS or '#eef1f4'
+_card   = CARD   or '#ffffff'
+style.configure('TNotebook', background=_canvas, borderwidth=0, tabmargins=[10, 8, 10, 0])
+style.configure('TNotebook.Tab', font=FONT_TAB, padding=[16, 8], borderwidth=0,
+                background='#dfe3e8', foreground=COL_MUTE)
+style.map('TNotebook.Tab',
+          background=[('selected', _card)],
+          foreground=[('selected', COL_ACCENT)],
+          expand=[('selected', [0, 0, 0, 0])])
+# soft rounded-ish frame around content (clam draws a thin flat border, not a bevel)
+style.configure('Card.TFrame', background=_card)
+my_font = font.Font(family='Segoe UI', size=12)
 
 # Subject list comes from the spreadsheet; SPEC references it, so it must exist first.
 mouse_room_params_df = pd.read_excel(mouse_room_params_path, sheet_name='Params')
@@ -444,6 +497,7 @@ SPEC = [
     ('Opto_Offset_1',                 'Opto_Offset_1',                  "Offset_1:",                         EPOCHS,                                  None,  'Opto Timing'),
     ('Opto_Offset_2',                 'Opto_Offset_2',                  "Offset_2:",                         EPOCHS,                                  None,  'Opto Timing'),
     ('Opto_Duration',                 'Opto_Duration',                  "Duration:",                         np.arange(0, 1010, 100),                 None,  'Opto Timing'),
+    ('Arduino',                       'Arduino',                        "Arduino:",                          ['NaN', 'True', 'False'],                str,   'Debug'),
     ('Stimulation_Site',              'Stimulation_Site',               "Stim Site:",                        ['NaN', 'PPC', 'ACC', 'ALM'],            None,  'Opto'),
     ('Stimulation_Type',              'Stimulation_Type',               "Stim Type:",                        ['NaN', 'Unilateral_Left', 'Unilateral_Right', 'Bilateral'], None, 'Opto'),
     ('AntiBias_Exp_Rate',             'AntiBias_Exp_Rate',              "AB_Exp_Rate:",                      [np.nan, 0.5, 1.0, 1.5, 2.0, 2.5, 3.0],  None,  'Anti-bias'),
@@ -478,9 +532,9 @@ SPEC = [
 tabs   = {}
 frames = {}
 for t in TABS:
-    tabs[t] = tk.Frame(notebook)
+    tabs[t] = tk.Frame(notebook, bg=CARD) if CARD else tk.Frame(notebook)
     notebook.add(tabs[t], text=t)
-    frames[t] = tk.Frame(tabs[t])
+    frames[t] = tk.Frame(tabs[t], bg=CARD) if CARD else tk.Frame(tabs[t])
     frames[t].pack(pady=(24, 0), anchor='n')
 
 setup_frame = frames['Setup']
@@ -497,66 +551,63 @@ experimenter, experimenter_label, experimenter_dropdown = create_label_dropdown(
     parent_frame=setup_frame, label_text="Experimenter:",
     option_list=['SS', 'QP'], y_pos=0)
 
-flush_rig_button = tk.Button(setup_frame, text="Flush Rig",
-                             height=1, width=10, font=my_font, command=flush_rig)
+flush_rig_button = tk.Button(setup_frame, font=FONT_BTN, relief='flat', borderwidth=0, padx=8, pady=6,
+                             text="Flush Rig", width=12, command=flush_rig)
 flush_rig_button.grid(row=1, column=0, padx=10, pady=10, sticky="w")
 
-camera_button = tk.Button(setup_frame, text="Camera",
-                          height=1, width=10, font=my_font, command=camera)
+camera_button = tk.Button(setup_frame, font=FONT_BTN, relief='flat', borderwidth=0, padx=8, pady=6,
+                          text="Camera", width=12, command=camera)
 camera_button.grid(row=2, column=0, padx=10, pady=10, sticky="w")
 
-test_speakers_button = tk.Button(setup_frame, text="Test Speakers", state='disabled',
-                                 height=1, width=15, font=my_font)
+test_speakers_button = tk.Button(setup_frame, font=FONT_BTN, relief='flat', borderwidth=0, padx=8, pady=6, text="Test Speakers", state='disabled', width=15)
 test_speakers_button.grid(row=1, column=1, padx=10, pady=10, sticky="w")
 
-calibrate_button = tk.Button(setup_frame, text="Calibrate", state='disabled',
-                             height=1, width=15, font=my_font)
+calibrate_button = tk.Button(setup_frame, font=FONT_BTN, relief='flat', borderwidth=0, padx=8, pady=6, text="Calibrate", state='disabled', width=15)
 calibrate_button.grid(row=2, column=1, padx=10, pady=10, sticky="w")
 
-push_data_button = tk.Button(setup_frame, text="Push Data",
-                             height=1, width=10, font=my_font, command=push_data)
+push_data_button = tk.Button(setup_frame, font=FONT_BTN, relief='flat', borderwidth=0, padx=8, pady=6,
+                             text="Push Data", width=12, command=push_data)
 push_data_button.grid(row=3, column=0, padx=10, pady=10, sticky="w")
 
 # %%
 # ACTION BUTTONS - below the notebook, so they are visible from every tab
 
-load_button = tk.Button(action_frame, text="Load params", command=load_csv,
-                        height=1, width=14, font=my_font)
+load_button = tk.Button(action_frame, font=FONT_BTN, relief='flat', borderwidth=0, padx=10, pady=6, text="Load params", command=load_csv, width=14)
 load_button.grid(row=0, column=0, padx=10, pady=5)
 
-overwrite_button = tk.Button(action_frame, text="Overwrite params", command=overwrite_csv,
-                             height=1, width=14, font=my_font)
+overwrite_button = tk.Button(action_frame, font=FONT_BTN, relief='flat', borderwidth=0, padx=10, pady=6, text="Overwrite params", command=overwrite_csv, width=14)
 overwrite_button.grid(row=1, column=0, padx=10, pady=5)
 
-run_protocol_button = tk.Button(action_frame, text="Launch Bonsai", state='active',
-                                command=launch_bonsai, height=1, width=12,
-                                font=my_font)
+run_protocol_button = tk.Button(action_frame, font=FONT_BTN, relief='flat', borderwidth=0, padx=10, pady=6, text="Launch Bonsai", state='active',
+                                command=launch_bonsai, width=12)
 run_protocol_button.grid(row=0, column=1, padx=10, pady=5)
 
-kill_bonsai_button = tk.Button(action_frame, text="Kill Bonsai", state='active',
-                               command=kill_bonsai, height=1, width=12,
-                               font=my_font)
+kill_bonsai_button = tk.Button(action_frame, font=FONT_BTN, relief='flat', borderwidth=0, padx=10, pady=6, text="Kill Bonsai", state='active',
+                               command=kill_bonsai, width=12)
 kill_bonsai_button.grid(row=1, column=1, padx=10, pady=5)
 
-status_label = tk.Label(action_frame, text='', font=('TkDefaultFont', 12))
-status_label.grid(row=2, column=0, columnspan=2, pady=(8, 0))
+rig_label = tk.Label(action_frame, text='', font=FONT_RIG, **({'bg':CANVAS} if CANVAS else {}))
+rig_label.grid(row=2, column=0, columnspan=2, pady=(8, 0))
 
-_paint(flush_rig_button, '#2e7d32')
-_paint(camera_button,    '#2e7d32')
-_paint(push_data_button, '#2e7d32')
-_paint(kill_bonsai_button, '#c62828')
+status_label = tk.Label(action_frame, text='', font=('Segoe UI', 11), fg=COL_MUTE, **({'bg':CANVAS} if CANVAS else {}))
+status_label.grid(row=3, column=0, columnspan=2, pady=(2, 0))
+
+_paint(flush_rig_button, COL_OK)
+_paint(camera_button,    COL_OK)
+_paint(push_data_button, COL_OK)
+_paint(kill_bonsai_button, COL_STOP)
 
 # Resolve which rig this machine is BEFORE anything can launch. On failure, disable
 # launch entirely and put the reason in the status line - the rig must be known.
 try:
     RIG = resolve_rig()
-    status_label.config(text="Rig %s (%s)  -  ready" % (RIG['rig'], RIG['Hostname']))
+    rig_label.config(text="Rig %s   (%s)" % (RIG['rig'], RIG['Hostname']), fg="#2e7d32")
 except Exception as e:
     RIG = None
     run_protocol_button.config(state='disabled')
-    _paint(run_protocol_button, '#9e9e9e')
+    _paint(run_protocol_button, COL_IDLE)
     tk.messagebox.showerror("Rig not configured", str(e))
-    status_label.config(text="RIG NOT CONFIGURED - see error")
+    rig_label.config(text="RIG NOT CONFIGURED - launch disabled", fg="#c62828")
 
 refresh_buttons()
 root.mainloop()
