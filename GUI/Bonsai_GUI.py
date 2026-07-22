@@ -27,6 +27,7 @@ from pathlib import Path
 # PATHS
 
 repo_path              = str(Path(__file__).resolve().parent.parent)
+gui_dir                = str(Path(__file__).resolve().parent)
 protocols_path         = repo_path + '/Protocols/'
 subject_params_file    = repo_path + '/Params/Subject_Params.csv'
 mouse_room_params_path = repo_path + '/Params/Mouse_Room_Params.xlsx'
@@ -320,7 +321,7 @@ def launch_bonsai():
         tk.messagebox.showwarning("Warning", "Bonsai.exe not found at " + bonsai_path)
         return
 
-    process = subprocess.Popen([bonsai_path, file_path, '--start'])
+    process = subprocess.Popen([bonsai_path, file_path, '--start'], cwd=gui_dir)
     S.running = True
     refresh_buttons()
 
@@ -344,11 +345,23 @@ def camera():
     if not os.path.exists(camera_path):
         tk.messagebox.showwarning("Warning", "No camera protocol found on current machine")
         return
-    process = subprocess.Popen([bonsai_path, camera_path, '--start'])
+    process = subprocess.Popen([bonsai_path, camera_path, '--start'], cwd=gui_dir)
     S.camera_on = True
     _paint(camera_button, COL_STOP)
 
-
+def open_in_editor():
+    """Open the workflow in the Bonsai editor with the SAME working directory a
+    real session uses. Opening Bonsai from the Start menu gives CWD =
+    AppData\\Local\\Bonsai, where neither ..\\Params\\ nor Extensions\\ resolves."""
+    file_path = protocols_path + 'Auditory_discrimination/Sound_Cat_V2.bonsai'
+    if not os.path.exists(file_path):
+        tk.messagebox.showwarning("Warning", "Protocol not found on current machine")
+        return
+    if not os.path.exists(bonsai_path):
+        tk.messagebox.showwarning("Warning", "Bonsai.exe not found at " + bonsai_path)
+        return
+    subprocess.Popen([bonsai_path, file_path], cwd=gui_dir)      # no --start
+    
 def flush_rig():
     global process
     if S.flush_on:
@@ -360,7 +373,7 @@ def flush_rig():
     if not os.path.exists(flush_rig_path):
         tk.messagebox.showwarning("Warning", "No flush rig protocol found on current machine")
         return
-    process = subprocess.Popen([bonsai_path, flush_rig_path, '--start'])
+    process = subprocess.Popen([bonsai_path, flush_rig_path, '--start'], cwd=gui_dir)
     S.flush_on = True
     _paint(flush_rig_button, COL_STOP)
 
@@ -568,6 +581,11 @@ push_data_button = tk.Button(setup_frame, font=FONT_BTN, relief='flat', borderwi
                              text="Push Data", width=12, command=push_data)
 push_data_button.grid(row=3, column=0, padx=10, pady=10, sticky="w")
 
+edit_workflow_button = tk.Button(setup_frame, font=FONT_BTN, relief='flat', borderwidth=0,
+                                 padx=8, pady=6, text="Edit Workflow", width=12,
+                                 command=open_in_editor)
+edit_workflow_button.grid(row=3, column=1, padx=10, pady=10, sticky="w")
+
 # %%
 # ACTION BUTTONS - below the notebook, so they are visible from every tab
 
@@ -595,6 +613,7 @@ _paint(flush_rig_button, COL_OK)
 _paint(camera_button,    COL_OK)
 _paint(push_data_button, COL_OK)
 _paint(kill_bonsai_button, COL_STOP)
+_paint(edit_workflow_button, COL_ACCENT)
 
 # Resolve which rig this machine is BEFORE anything can launch. On failure, disable
 # launch entirely and put the reason in the status line - the rig must be known.
