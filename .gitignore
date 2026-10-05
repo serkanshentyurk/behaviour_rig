@@ -1,18 +1,22 @@
-# Ignore all temporary files
+# --- Temporary / editor files ---
 *.tmp
 *.temp
 *.log
 *.bak
 *.swp
-*.DS_Store
 
-# Ignore Python cache
+# --- OS / notebook junk ---
+.DS_Store
+Thumbs.db
+.ipynb_checkpoints/
+
+# --- Python cache ---
 __pycache__/
 *.pyc
 *.pyo
 *.pyd
 
-# Ignore the Data folder
+# --- Data + generated params (never commit) ---
 Data/
 Params/Rig_Params.csv
 Params/Subject_Params.csv
@@ -23,10 +27,3 @@ obj/
 .vs/
 *.suo
 *.user
-
-# --- Bonsai per-machine editor state ---
-.bonsai/Settings/*.editor
-
-# --- OS / notebook junk ---
-Thumbs.db
-.ipynb_checkpoints/
