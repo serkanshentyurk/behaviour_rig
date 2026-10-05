@@ -15530,9 +15530,6 @@ def process(value):
                                       <Name>Correct_Side</Name>
                                     </Expression>
                                     <Expression xsi:type="Combinator">
-                                      <Combinator xsi:type="rx:Merge" />
-                                    </Expression>
-                                    <Expression xsi:type="Combinator">
                                       <Combinator xsi:type="rx:Take">
                                         <rx:Count>1</rx:Count>
                                       </Combinator>
@@ -15589,13 +15586,11 @@ def process(value):
                                     <Edge From="34" To="35" Label="Source3" />
                                     <Edge From="35" To="36" Label="Source1" />
                                     <Edge From="36" To="37" Label="Source1" />
-                                    <Edge From="37" To="42" Label="Source1" />
                                     <Edge From="38" To="39" Label="Source1" />
                                     <Edge From="39" To="40" Label="Source1" />
                                     <Edge From="40" To="41" Label="Source1" />
                                     <Edge From="42" To="43" Label="Source1" />
-                                    <Edge From="43" To="44" Label="Source1" />
-                                  </Edges>
+                                  <Edge From="37" To="42" Label="Source1" /></Edges>
                                 </Workflow>
                               </Expression>
                               <Expression xsi:type="Combinator">

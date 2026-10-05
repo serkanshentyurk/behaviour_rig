@@ -404,3 +404,6 @@ def test_stimulus_stage_ends_only_after_the_sound(graphs):
     assert ('rx:SelectMany', 'Play') in names, "Normal_Stim's output does not come from Play"
     assert ('MulticastSubject', 'Correct_Side') not in names, \
         "Normal_Stim's output also depends on Correct_Side, so the stage can end before the sound has played"
+    # A one-input Merge means 'flatten a stream of streams' in Bonsai; fed an ordinary stream it fails to build.
+    lonely = [i for i in upstream if g.kind(i) == 'Combinator:rx:Merge' and len(g.inputs(i)) < 2]
+    assert not lonely, f"Normal_Stim has a Merge with one input on its output path (node {lonely}); Bonsai will reject it"
