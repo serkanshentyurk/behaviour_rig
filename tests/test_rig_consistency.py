@@ -17,6 +17,8 @@ sys.path.insert(0, str(REPO / 'GUI'))
 import params_io  # noqa: E402
 
 WORKFLOW = REPO / 'Protocols' / 'Auditory_discrimination' / 'Sound_Cat_V2.bonsai'
+LAYOUT = WORKFLOW.with_name(WORKFLOW.name + '.layout')          # what Bonsai 2.7 reads
+NEW_STYLE_LAYOUT = WORKFLOW.parent / '.bonsai' / 'Settings' / (WORKFLOW.stem + '.layout')  # Bonsai 2.8+
 XLSX = REPO / 'Params' / 'Mouse_Room_Params.xlsx'
 RIGS = REPO / 'Params' / 'Rigs.csv'
 
@@ -25,7 +27,11 @@ XSI_TYPE = '{http://www.w3.org/2001/XMLSchema-instance}type'
 
 # Trial_Summary columns whose name differs from the subject they record.
 COLUMN_RENAMES = {'Go_Cue_Duration': 'Go_Cue_Dur', 'Opto_On': 'Opto_ON'}
-NEW_TRIAL_SUMMARY_COLUMNS = ['Session_Type', 'Stimulation_Site', 'Stimulation_Type']
+NEW_TRIAL_SUMMARY_COLUMNS = ['Session_Type', 'Stimulation_Site', 'Stimulation_Type',
+                             'Window_Open_Time', 'First_Lick_Time', 'Early_Lick_Time']
+TRIAL_TIMES = ['Window_Open_Time', 'First_Lick_Time', 'Early_Lick_Time']
+FULL_TASK_STAGES = ['Full_Task_Disc', 'Full_Task_Cont']
+FRESH_LICK_STAGES = ['Three_And_Three', 'Full_Task_Disc', 'Full_Task_Cont']
 
 
 # ---------------------------------------------------------------- workflow reading
@@ -86,6 +92,27 @@ def load_workflow():
 
     walk(root.find(B + 'Workflow'), ())
     return graphs
+
+
+def group(graphs, *names):
+    """Nested workflow reached through group names (stage Conditions share names, so skip them)."""
+    path = ()
+    for name in names:
+        g = graphs[path]
+        hits = [i for i in range(len(g.nodes))
+                if g.name(i) == name and g.kind(i) != 'rx:Condition' and path + ((i, name),) in graphs]
+        assert len(hits) == 1, f"expected one group called {name} under {path}"
+        path += ((hits[0], name),)
+    return graphs[path]
+
+
+def upstream(g, node, steps):
+    """Kinds of the nodes reached by following Source1 back from node."""
+    kinds = []
+    for _ in range(steps):
+        node = g.inputs(node)['Source1']
+        kinds.append((g.kind(node), node))
+    return kinds
 
 
 def top_group(graphs, name):
@@ -226,3 +253,113 @@ def test_every_csv_writer_closes_at_session_end(graphs):
             if stop is None or g.kind(stop) != 'SubscribeSubject' or g.name(stop) != 'Close_Files':
                 failures.append(f"{where}: Source2 of the TakeUntil is not SubscribeSubject Close_Files")
     assert not failures, "\n".join(failures)
+
+
+def test_bonsai_can_compile_the_csharp_operators():
+    """The GUI starts Bonsai in GUI/. Bonsai only compiles GUI/Extensions/*.cs (zapit_TCPclient)
+    when GUI/Extensions.csproj sits next to that folder; without it the Zapit node is an
+    unknown type and the workflow will not start, emulator or not."""
+    scripts = sorted((REPO / 'GUI' / 'Extensions').glob('*.cs'))
+    assert scripts, "no C# operators found in GUI/Extensions"
+    assert (REPO / 'GUI' / 'Extensions.csproj').exists(), \
+        "GUI/Extensions.csproj is missing, so Bonsai will not compile " + ", ".join(f.name for f in scripts)
+
+
+def test_visualiser_layout_lines_up_with_the_workflow(graphs):
+    """The .layout file holds one entry per node, in node order. If it is out of step with the
+    workflow, or has no visualisers, the trial/performance windows silently stop appearing."""
+    failures, windows = [], []
+
+    def check(layout_el, path):
+        g = graphs[path]
+        entries = [c for c in layout_el if c.tag == 'DialogSettings']
+        if len(entries) != len(g.nodes):
+            failures.append(f"{'/'.join(n or str(i) for i, n in path) or 'top level'}: "
+                            f"{len(entries)} layout entries for {len(g.nodes)} nodes")
+            return
+        for i, entry in enumerate(entries):
+            child = path + ((i, g.name(i)),)
+            if entry.findtext('VisualizerTypeName'):
+                windows.append(g.name(i) or g.kind(i))
+                if child in graphs and not graphs[child].find('WorkflowOutput'):
+                    failures.append(f"group {g.name(i)} has a visualiser but no WorkflowOutput, so it shows nothing")
+            nested = entry.find('EditorVisualizerLayout')
+            if nested is not None and child in graphs:
+                check(nested, child)
+
+    check(ET.parse(LAYOUT).getroot(), ())
+    assert not failures, "\n".join(failures)
+    assert windows, f"{LAYOUT.name} has no visualiser windows"
+    if NEW_STYLE_LAYOUT.exists():
+        assert ET.parse(NEW_STYLE_LAYOUT).getroot().find('DialogSettings') is not None, \
+            f"{NEW_STYLE_LAYOUT} is empty; Bonsai 2.8+ would use it instead of {LAYOUT.name} and open no windows"
+
+
+def test_responses_only_count_licks_that_start_while_listening(graphs):
+    """The beams are BehaviorSubjects, so subscribing replays the current state; Skip(1) drops it,
+    so a contact already in progress when the rig starts listening is not taken as the choice."""
+    failures = []
+    for stage in FRESH_LICK_STAGES:
+        g = group(graphs, 'Trial', 'Sound_Cat_Trial', stage, 'Response')
+        for beam in ('Beam_1_Bool', 'Beam_2_Bool'):
+            for s in g.find('SubscribeSubject', beam):
+                outs = g.outputs(s)
+                skip = outs[0] if len(outs) == 1 else None
+                if skip is None or g.kind(skip) != 'Combinator:rx:Skip' or \
+                        _text(g.nodes[skip].find(B + 'Combinator'), 'Count') != '1':
+                    failures.append(f"{stage}/Response: {beam} is not followed by Skip(1)")
+    assert not failures, "\n".join(failures)
+
+
+def test_trial_times_are_declared_reset_and_set(graphs):
+    failures = []
+    variables = group(graphs, 'Variables')
+    for t in TRIAL_TIMES:
+        decl = variables.find('rx:BehaviorSubject', t)
+        if len(decl) != 1 or _text(variables.nodes[variables.inputs(decl[0])['Source1']].find(B + 'Combinator'),
+                                   'Value') != 'NaN':
+            failures.append(f"Variables: {t} is not declared once with a NaN start value")
+    for stage in FULL_TASK_STAGES:
+        g = group(graphs, 'Trial', 'Sound_Cat_Trial', stage)
+        # reset at the start of every trial
+        for t in TRIAL_TIMES:
+            writers = g.find('MulticastSubject', t)
+            if not any(g.kind(g.inputs(w)['Source1']) == 'Combinator:DoubleProperty' and
+                       _text(g.nodes[g.inputs(w)['Source1']].find(B + 'Combinator'), 'Value') == 'NaN' for w in writers):
+                failures.append(f"{stage}: {t} is not reset to NaN at the start of the trial")
+        # window open / first lick: timestamps of Record_Latency's two inputs
+        rl = group(graphs, 'Trial', 'Sound_Cat_Trial', stage, 'Record_Latency')
+        for t, source in (('Window_Open_Time', 'Source1'), ('First_Lick_Time', 'Source2')):
+            ok = False
+            for w in rl.find('MulticastSubject', t):
+                chain = upstream(rl, w, 3)
+                ok |= ([k for k, _ in chain[:2]] == ['MemberSelector', 'Combinator:rx:Timestamp'] and
+                       chain[2][0] == 'WorkflowInput' and rl.name(chain[2][1]) == source)
+            if not ok:
+                failures.append(f"{stage}/Record_Latency: {t} is not the timestamp of {source}")
+        # early lick: first new contact, cut off when the window opens (Go_Cue output)
+        go_cue = g.find('rx:SelectMany', 'Go_Cue')
+        ok = False
+        for w in g.find('MulticastSubject', 'Early_Lick_Time'):
+            if g.kind(g.inputs(w)['Source1']) != 'MemberSelector':
+                continue
+            chain = upstream(g, w, 4)
+            if [k for k, _ in chain] == ['MemberSelector', 'Combinator:rx:Timestamp', 'Combinator:rx:Take',
+                                         'Combinator:rx:TakeUntil']:
+                ok |= g.inputs(chain[3][1]).get('Source2') in go_cue
+        if not ok:
+            failures.append(f"{stage}: Early_Lick_Time is not the first lick before Go_Cue ends")
+    assert not failures, "\n".join(failures)
+
+
+def test_response_latency_comes_from_the_clock_times(graphs):
+    g = top_group(graphs, 'Wide_Form_Saving')
+    writer = g.find('io:CsvWriter')[0]
+    flatten = g.inputs(writer)['Source1']
+    expression = _text(g.nodes[flatten], 'Expression')
+    m = re.search(r"\(\s*(Item\d(?:\.Item\d)*)\s*-\s*(Item\d(?:\.Item\d)*)\s*\)\s*\*\s*1000\s+as\s+Response_Latency",
+                  expression)
+    assert m, "Response_Latency is not (First_Lick_Time - Window_Open_Time) * 1000"
+    zip_node = g.inputs(flatten)['Source1']
+    names = [g.name(_resolve(g, zip_node, path.split('.'))[0]) for path in m.groups()]
+    assert names == ['First_Lick_Time', 'Window_Open_Time'], names

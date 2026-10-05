@@ -661,7 +661,31 @@
             <Expression xsi:type="rx:BehaviorSubject">
               <Name>Stim_Duration_Float</Name>
             </Expression>
-          </Nodes>
+          <Expression xsi:type="Combinator">
+              <Combinator xsi:type="DoubleProperty">
+                <Value>NaN</Value>
+              </Combinator>
+            </Expression>
+            <Expression xsi:type="rx:BehaviorSubject">
+              <Name>Window_Open_Time</Name>
+            </Expression>
+            <Expression xsi:type="Combinator">
+              <Combinator xsi:type="DoubleProperty">
+                <Value>NaN</Value>
+              </Combinator>
+            </Expression>
+            <Expression xsi:type="rx:BehaviorSubject">
+              <Name>First_Lick_Time</Name>
+            </Expression>
+            <Expression xsi:type="Combinator">
+              <Combinator xsi:type="DoubleProperty">
+                <Value>NaN</Value>
+              </Combinator>
+            </Expression>
+            <Expression xsi:type="rx:BehaviorSubject">
+              <Name>Early_Lick_Time</Name>
+            </Expression>
+            </Nodes>
           <Edges>
             <Edge From="0" To="1" Label="Source1" />
             <Edge From="2" To="3" Label="Source1" />
@@ -771,7 +795,7 @@
             <Edge From="146" To="147" Label="Source1" />
             <Edge From="146" To="148" Label="Source1" />
             <Edge From="146" To="149" Label="Source1" />
-          </Edges>
+          <Edge From="150" To="151" Label="Source1" /><Edge From="152" To="153" Label="Source1" /><Edge From="154" To="155" Label="Source1" /></Edges>
         </Workflow>
       </Expression>
       <Expression xsi:type="GroupWorkflow">
@@ -6188,7 +6212,7 @@ Item1.Item1.Item1.Item1.Item1.Item1.Item2.Item3 as Reward_Side,
 Item1.Item1.Item1.Item1.Item1.Item1.Item2.Item4 as First_Lick,
 Item1.Item1.Item1.Item1.Item1.Item1.Item2.Item5 as Correct_Side,
 Item1.Item1.Item1.Item1.Item1.Item1.Item2.Item6 as P_Right,
-Item1.Item1.Item1.Item1.Item1.Item1.Item2.Item7 as Response_Latency,
+(Item1.Item3.Item5 - Item1.Item3.Item4) * 1000 as Response_Latency,
 
 Item1.Item1.Item1.Item1.Item1.Item2.Item1 as Trial_Outcome,
 Item1.Item1.Item1.Item1.Item1.Item2.Item2 as Inter_Trial_Interval,
@@ -6232,6 +6256,9 @@ Item1.Item2.Item6 as Air_Puff_Contingency_Rule,
 Item1.Item3.Item1 as Session_Type,
 Item1.Item3.Item2 as Stimulation_Site,
 Item1.Item3.Item3 as Stimulation_Type,
+Item1.Item3.Item4 as Window_Open_Time,
+Item1.Item3.Item5 as First_Lick_Time,
+Item1.Item3.Item6 as Early_Lick_Time,
 
 Item2 as Trial_End_Time
 
@@ -6255,7 +6282,17 @@ Item2 as Trial_End_Time
             <Expression xsi:type="Combinator">
               <Combinator xsi:type="rx:TakeUntil" />
             </Expression>
-          </Nodes>
+          <Expression xsi:type="WorkflowOutput" />
+                <Expression xsi:type="SubscribeSubject">
+                    <Name>Window_Open_Time</Name>
+                  </Expression>
+                  <Expression xsi:type="SubscribeSubject">
+                    <Name>First_Lick_Time</Name>
+                  </Expression>
+                  <Expression xsi:type="SubscribeSubject">
+                    <Name>Early_Lick_Time</Name>
+                  </Expression>
+                  </Nodes>
           <Edges>
             <Edge From="0" To="7" Label="Source1" />
             <Edge From="1" To="7" Label="Source2" />
@@ -6337,7 +6374,8 @@ Item2 as Trial_End_Time
             <Edge From="76" To="77" Label="Source1" />
             <Edge From="77" To="79" Label="Source1" />
             <Edge From="78" To="79" Label="Source2" />
-          </Edges>
+          <Edge From="79" To="80" Label="Source1" />
+            <Edge From="81" To="68" Label="Source4" /><Edge From="82" To="68" Label="Source5" /><Edge From="83" To="68" Label="Source6" /></Edges>
         </Workflow>
       </Expression>
       <Expression xsi:type="GroupWorkflow">
@@ -9481,12 +9519,20 @@ def process(value):
                                 </Combinator>
                               </Expression>
                               <Expression xsi:type="WorkflowOutput" />
-                            </Nodes>
+                            <Expression xsi:type="Combinator">
+              <Combinator xsi:type="rx:Skip">
+                <rx:Count>1</rx:Count>
+              </Combinator>
+            </Expression>
+            <Expression xsi:type="Combinator">
+              <Combinator xsi:type="rx:Skip">
+                <rx:Count>1</rx:Count>
+              </Combinator>
+            </Expression>
+            </Nodes>
                             <Edges>
-                              <Edge From="0" To="1" Label="Source1" />
                               <Edge From="1" To="2" Label="Source1" />
                               <Edge From="2" To="6" Label="Source1" />
-                              <Edge From="3" To="4" Label="Source1" />
                               <Edge From="4" To="5" Label="Source1" />
                               <Edge From="5" To="6" Label="Source2" />
                               <Edge From="6" To="7" Label="Source1" />
@@ -9534,7 +9580,7 @@ def process(value):
                               <Edge From="42" To="43" Label="Source1" />
                               <Edge From="43" To="44" Label="Source1" />
                               <Edge From="44" To="45" Label="Source1" />
-                            </Edges>
+                            <Edge From="0" To="46" Label="Source1" /><Edge From="46" To="1" Label="Source1" /><Edge From="3" To="47" Label="Source1" /><Edge From="47" To="4" Label="Source1" /></Edges>
                           </Workflow>
                         </Expression>
                         <Expression xsi:type="rx:SelectMany">
@@ -12193,12 +12239,20 @@ def process(value):
                               <Expression xsi:type="MulticastSubject">
                                 <Name>Trial_Epoch</Name>
                               </Expression>
-                            </Nodes>
+                            <Expression xsi:type="Combinator">
+              <Combinator xsi:type="rx:Skip">
+                <rx:Count>1</rx:Count>
+              </Combinator>
+            </Expression>
+            <Expression xsi:type="Combinator">
+              <Combinator xsi:type="rx:Skip">
+                <rx:Count>1</rx:Count>
+              </Combinator>
+            </Expression>
+            </Nodes>
                             <Edges>
-                              <Edge From="0" To="1" Label="Source1" />
                               <Edge From="1" To="2" Label="Source1" />
                               <Edge From="2" To="6" Label="Source1" />
-                              <Edge From="3" To="4" Label="Source1" />
                               <Edge From="4" To="5" Label="Source1" />
                               <Edge From="5" To="6" Label="Source2" />
                               <Edge From="6" To="13" Label="Source1" />
@@ -12247,7 +12301,7 @@ def process(value):
                               <Edge From="41" To="42" Label="Source1" />
                               <Edge From="42" To="43" Label="Source1" />
                               <Edge From="44" To="45" Label="Source1" />
-                            </Edges>
+                            <Edge From="0" To="46" Label="Source1" /><Edge From="46" To="1" Label="Source1" /><Edge From="3" To="47" Label="Source1" /><Edge From="47" To="4" Label="Source1" /></Edges>
                           </Workflow>
                         </Expression>
                         <Expression xsi:type="Combinator">
@@ -12717,7 +12771,25 @@ def process(value):
                                 <Name>Response_Latency</Name>
                               </Expression>
                               <Expression xsi:type="WorkflowOutput" />
-                            </Nodes>
+                            <Expression xsi:type="Combinator">
+                    <Combinator xsi:type="rx:Timestamp" />
+                  </Expression>
+                  <Expression xsi:type="MemberSelector">
+                    <Selector>Timestamp.TimeOfDay.TotalSeconds</Selector>
+                  </Expression>
+                  <Expression xsi:type="MulticastSubject">
+              <Name>Window_Open_Time</Name>
+            </Expression>
+            <Expression xsi:type="Combinator">
+                    <Combinator xsi:type="rx:Timestamp" />
+                  </Expression>
+                  <Expression xsi:type="MemberSelector">
+                    <Selector>Timestamp.TimeOfDay.TotalSeconds</Selector>
+                  </Expression>
+                  <Expression xsi:type="MulticastSubject">
+              <Name>First_Lick_Time</Name>
+            </Expression>
+            </Nodes>
                             <Edges>
                               <Edge From="0" To="1" Label="Source1" />
                               <Edge From="1" To="5" Label="Source1" />
@@ -12727,10 +12799,92 @@ def process(value):
                               <Edge From="5" To="6" Label="Source2" />
                               <Edge From="6" To="7" Label="Source1" />
                               <Edge From="7" To="8" Label="Source1" />
-                            </Edges>
+                            <Edge From="2" To="9" Label="Source1" /><Edge From="9" To="10" Label="Source1" /><Edge From="10" To="11" Label="Source1" /><Edge From="4" To="12" Label="Source1" /><Edge From="12" To="13" Label="Source1" /><Edge From="13" To="14" Label="Source1" /></Edges>
                           </Workflow>
                         </Expression>
-                      </Nodes>
+                      <Expression xsi:type="Combinator">
+              <Combinator xsi:type="DoubleProperty">
+                <Value>NaN</Value>
+              </Combinator>
+            </Expression>
+            <Expression xsi:type="MulticastSubject">
+              <Name>Window_Open_Time</Name>
+            </Expression>
+            <Expression xsi:type="MulticastSubject">
+              <Name>First_Lick_Time</Name>
+            </Expression>
+            <Expression xsi:type="MulticastSubject">
+              <Name>Early_Lick_Time</Name>
+            </Expression>
+            <Expression xsi:type="Combinator">
+              <Combinator xsi:type="rx:Merge" />
+            </Expression>
+            <Expression xsi:type="SubscribeSubject">
+                    <Name>Beam_1_Bool</Name>
+                  </Expression>
+                  <Expression xsi:type="Combinator">
+              <Combinator xsi:type="rx:Skip">
+                <rx:Count>1</rx:Count>
+              </Combinator>
+            </Expression>
+            <Expression xsi:type="rx:Condition">
+                                <Name>False</Name>
+                                <Workflow>
+                                  <Nodes>
+                                    <Expression xsi:type="WorkflowInput">
+                                      <Name>Source1</Name>
+                                    </Expression>
+                                    <Expression xsi:type="BitwiseNot" />
+                                    <Expression xsi:type="WorkflowOutput" />
+                                  </Nodes>
+                                  <Edges>
+                                    <Edge From="0" To="1" Label="Source1" />
+                                    <Edge From="1" To="2" Label="Source1" />
+                                  </Edges>
+                                </Workflow>
+                              </Expression>
+                              <Expression xsi:type="SubscribeSubject">
+                    <Name>Beam_2_Bool</Name>
+                  </Expression>
+                  <Expression xsi:type="Combinator">
+              <Combinator xsi:type="rx:Skip">
+                <rx:Count>1</rx:Count>
+              </Combinator>
+            </Expression>
+            <Expression xsi:type="rx:Condition">
+                                <Name>False</Name>
+                                <Workflow>
+                                  <Nodes>
+                                    <Expression xsi:type="WorkflowInput">
+                                      <Name>Source1</Name>
+                                    </Expression>
+                                    <Expression xsi:type="BitwiseNot" />
+                                    <Expression xsi:type="WorkflowOutput" />
+                                  </Nodes>
+                                  <Edges>
+                                    <Edge From="0" To="1" Label="Source1" />
+                                    <Edge From="1" To="2" Label="Source1" />
+                                  </Edges>
+                                </Workflow>
+                              </Expression>
+                              <Expression xsi:type="Combinator">
+                    <Combinator xsi:type="rx:TakeUntil" />
+                  </Expression>
+                  <Expression xsi:type="Combinator">
+              <Combinator xsi:type="rx:Take">
+                <rx:Count>1</rx:Count>
+              </Combinator>
+            </Expression>
+            <Expression xsi:type="Combinator">
+                    <Combinator xsi:type="rx:Timestamp" />
+                  </Expression>
+                  <Expression xsi:type="MemberSelector">
+                    <Selector>Timestamp.TimeOfDay.TotalSeconds</Selector>
+                  </Expression>
+                  <Expression xsi:type="MulticastSubject">
+              <Name>Early_Lick_Time</Name>
+            </Expression>
+            </Nodes>
                       <Edges>
                         <Edge From="0" To="1" Label="Source1" />
                         <Edge From="1" To="2" Label="Source1" />
@@ -12755,7 +12909,7 @@ def process(value):
                         <Edge From="16" To="17" Label="Source1" />
                         <Edge From="17" To="18" Label="Source1" />
                         <Edge From="18" To="19" Label="Source1" />
-                      </Edges>
+                      <Edge From="21" To="22" Label="Source1" /><Edge From="21" To="23" Label="Source1" /><Edge From="21" To="24" Label="Source1" /><Edge From="26" To="27" Label="Source1" /><Edge From="27" To="28" Label="Source1" /><Edge From="28" To="25" Label="Source1" /><Edge From="29" To="30" Label="Source1" /><Edge From="30" To="31" Label="Source1" /><Edge From="31" To="25" Label="Source2" /><Edge From="25" To="32" Label="Source1" /><Edge From="2" To="32" Label="Source2" /><Edge From="32" To="33" Label="Source1" /><Edge From="33" To="34" Label="Source1" /><Edge From="34" To="35" Label="Source1" /><Edge From="35" To="36" Label="Source1" /></Edges>
                     </Workflow>
                   </Expression>
                   <Expression xsi:type="rx:Condition">
@@ -16180,12 +16334,20 @@ def process(value):
                               <Expression xsi:type="MulticastSubject">
                                 <Name>Trial_Epoch</Name>
                               </Expression>
-                            </Nodes>
+                            <Expression xsi:type="Combinator">
+              <Combinator xsi:type="rx:Skip">
+                <rx:Count>1</rx:Count>
+              </Combinator>
+            </Expression>
+            <Expression xsi:type="Combinator">
+              <Combinator xsi:type="rx:Skip">
+                <rx:Count>1</rx:Count>
+              </Combinator>
+            </Expression>
+            </Nodes>
                             <Edges>
-                              <Edge From="0" To="1" Label="Source1" />
                               <Edge From="1" To="2" Label="Source1" />
                               <Edge From="2" To="6" Label="Source1" />
-                              <Edge From="3" To="4" Label="Source1" />
                               <Edge From="4" To="5" Label="Source1" />
                               <Edge From="5" To="6" Label="Source2" />
                               <Edge From="6" To="13" Label="Source1" />
@@ -16234,7 +16396,7 @@ def process(value):
                               <Edge From="41" To="42" Label="Source1" />
                               <Edge From="42" To="43" Label="Source1" />
                               <Edge From="44" To="45" Label="Source1" />
-                            </Edges>
+                            <Edge From="0" To="46" Label="Source1" /><Edge From="46" To="1" Label="Source1" /><Edge From="3" To="47" Label="Source1" /><Edge From="47" To="4" Label="Source1" /></Edges>
                           </Workflow>
                         </Expression>
                         <Expression xsi:type="Combinator">
@@ -16709,7 +16871,25 @@ def process(value):
                                 <Name>Response_Latency</Name>
                               </Expression>
                               <Expression xsi:type="WorkflowOutput" />
-                            </Nodes>
+                            <Expression xsi:type="Combinator">
+                    <Combinator xsi:type="rx:Timestamp" />
+                  </Expression>
+                  <Expression xsi:type="MemberSelector">
+                    <Selector>Timestamp.TimeOfDay.TotalSeconds</Selector>
+                  </Expression>
+                  <Expression xsi:type="MulticastSubject">
+              <Name>Window_Open_Time</Name>
+            </Expression>
+            <Expression xsi:type="Combinator">
+                    <Combinator xsi:type="rx:Timestamp" />
+                  </Expression>
+                  <Expression xsi:type="MemberSelector">
+                    <Selector>Timestamp.TimeOfDay.TotalSeconds</Selector>
+                  </Expression>
+                  <Expression xsi:type="MulticastSubject">
+              <Name>First_Lick_Time</Name>
+            </Expression>
+            </Nodes>
                             <Edges>
                               <Edge From="0" To="1" Label="Source1" />
                               <Edge From="1" To="5" Label="Source1" />
@@ -16720,10 +16900,92 @@ def process(value):
                               <Edge From="6" To="7" Label="Source1" />
                               <Edge From="7" To="8" Label="Source1" />
                               <Edge From="8" To="9" Label="Source1" />
-                            </Edges>
+                            <Edge From="2" To="10" Label="Source1" /><Edge From="10" To="11" Label="Source1" /><Edge From="11" To="12" Label="Source1" /><Edge From="4" To="13" Label="Source1" /><Edge From="13" To="14" Label="Source1" /><Edge From="14" To="15" Label="Source1" /></Edges>
                           </Workflow>
                         </Expression>
-                      </Nodes>
+                      <Expression xsi:type="Combinator">
+              <Combinator xsi:type="DoubleProperty">
+                <Value>NaN</Value>
+              </Combinator>
+            </Expression>
+            <Expression xsi:type="MulticastSubject">
+              <Name>Window_Open_Time</Name>
+            </Expression>
+            <Expression xsi:type="MulticastSubject">
+              <Name>First_Lick_Time</Name>
+            </Expression>
+            <Expression xsi:type="MulticastSubject">
+              <Name>Early_Lick_Time</Name>
+            </Expression>
+            <Expression xsi:type="Combinator">
+              <Combinator xsi:type="rx:Merge" />
+            </Expression>
+            <Expression xsi:type="SubscribeSubject">
+                    <Name>Beam_1_Bool</Name>
+                  </Expression>
+                  <Expression xsi:type="Combinator">
+              <Combinator xsi:type="rx:Skip">
+                <rx:Count>1</rx:Count>
+              </Combinator>
+            </Expression>
+            <Expression xsi:type="rx:Condition">
+                                <Name>False</Name>
+                                <Workflow>
+                                  <Nodes>
+                                    <Expression xsi:type="WorkflowInput">
+                                      <Name>Source1</Name>
+                                    </Expression>
+                                    <Expression xsi:type="BitwiseNot" />
+                                    <Expression xsi:type="WorkflowOutput" />
+                                  </Nodes>
+                                  <Edges>
+                                    <Edge From="0" To="1" Label="Source1" />
+                                    <Edge From="1" To="2" Label="Source1" />
+                                  </Edges>
+                                </Workflow>
+                              </Expression>
+                              <Expression xsi:type="SubscribeSubject">
+                    <Name>Beam_2_Bool</Name>
+                  </Expression>
+                  <Expression xsi:type="Combinator">
+              <Combinator xsi:type="rx:Skip">
+                <rx:Count>1</rx:Count>
+              </Combinator>
+            </Expression>
+            <Expression xsi:type="rx:Condition">
+                                <Name>False</Name>
+                                <Workflow>
+                                  <Nodes>
+                                    <Expression xsi:type="WorkflowInput">
+                                      <Name>Source1</Name>
+                                    </Expression>
+                                    <Expression xsi:type="BitwiseNot" />
+                                    <Expression xsi:type="WorkflowOutput" />
+                                  </Nodes>
+                                  <Edges>
+                                    <Edge From="0" To="1" Label="Source1" />
+                                    <Edge From="1" To="2" Label="Source1" />
+                                  </Edges>
+                                </Workflow>
+                              </Expression>
+                              <Expression xsi:type="Combinator">
+                    <Combinator xsi:type="rx:TakeUntil" />
+                  </Expression>
+                  <Expression xsi:type="Combinator">
+              <Combinator xsi:type="rx:Take">
+                <rx:Count>1</rx:Count>
+              </Combinator>
+            </Expression>
+            <Expression xsi:type="Combinator">
+                    <Combinator xsi:type="rx:Timestamp" />
+                  </Expression>
+                  <Expression xsi:type="MemberSelector">
+                    <Selector>Timestamp.TimeOfDay.TotalSeconds</Selector>
+                  </Expression>
+                  <Expression xsi:type="MulticastSubject">
+              <Name>Early_Lick_Time</Name>
+            </Expression>
+            </Nodes>
                       <Edges>
                         <Edge From="0" To="1" Label="Source1" />
                         <Edge From="1" To="2" Label="Source1" />
@@ -16748,7 +17010,7 @@ def process(value):
                         <Edge From="16" To="17" Label="Source1" />
                         <Edge From="17" To="18" Label="Source1" />
                         <Edge From="18" To="19" Label="Source1" />
-                      </Edges>
+                      <Edge From="21" To="22" Label="Source1" /><Edge From="21" To="23" Label="Source1" /><Edge From="21" To="24" Label="Source1" /><Edge From="26" To="27" Label="Source1" /><Edge From="27" To="28" Label="Source1" /><Edge From="28" To="25" Label="Source1" /><Edge From="29" To="30" Label="Source1" /><Edge From="30" To="31" Label="Source1" /><Edge From="31" To="25" Label="Source2" /><Edge From="25" To="32" Label="Source1" /><Edge From="2" To="32" Label="Source2" /><Edge From="32" To="33" Label="Source1" /><Edge From="33" To="34" Label="Source1" /><Edge From="34" To="35" Label="Source1" /><Edge From="35" To="36" Label="Source1" /></Edges>
                     </Workflow>
                   </Expression>
                   <Expression xsi:type="Combinator">
