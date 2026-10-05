@@ -16,12 +16,12 @@ if exist "%USERPROFILE%\miniconda3\condabin\conda.bat" (
 REM --- Move to the repo (this .bat lives in GUI/, so go up one) ---
 cd /d "%~dp0"
 
-@REM  REM --- Sync to server: take origin/main exactly, discard local edits to
-@REM  REM     TRACKED files. Ignored files (Rig_Params.csv, Subject_Params.csv) are
-@REM  REM     left untouched, so this rig keeps its generated params. No "git clean":
-@REM  REM     that would delete untracked files, which we never want on a rig.
-@REM  git fetch origin
-@REM  git reset --hard origin/main
+REM --- Sync to server: take origin/main exactly, discard local edits to
+REM     TRACKED files. Ignored files (Rig_Params.csv, Subject_Params.csv) are
+REM     left untouched, so this rig keeps its generated params. No "git clean":
+REM     that would delete untracked files, which we never want on a rig.
+git fetch origin
+git reset --hard origin/main
 
 echo === STARTING GUI ===
 where python

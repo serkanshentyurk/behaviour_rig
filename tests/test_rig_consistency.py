@@ -386,3 +386,21 @@ def test_each_spout_uses_its_own_valve_time(graphs):
             failures.append(f"{'/'.join(n or '' for _, n in path)}: opens {sorted(opened)} but is timed by {sorted(times)}")
     assert checked >= 10, f"expected at least 10 SOUND_CAT reward groups, found {checked}"
     assert not failures, "\n".join(failures)
+
+
+def test_stimulus_stage_ends_only_after_the_sound(graphs):
+    """Full_Task_Cont/Stim/Normal_Stim must finish only when Play has played and waited out the sound.
+    Until 5 Oct 2026 a branch from Correct_Side also ended it, so with Asym_Left/Asym_Right the go cue
+    started at sound onset and some trials played no sound at all."""
+    g = group(graphs, 'Trial', 'Sound_Cat_Trial', 'Full_Task_Cont', 'Stim', 'Normal_Stim')
+    out = g.find('WorkflowOutput')[0]
+    upstream, todo = set(), [out]
+    while todo:
+        n = todo.pop()
+        for src in g.inputs(n).values():
+            if src not in upstream:
+                upstream.add(src); todo.append(src)
+    names = {(g.kind(i), g.name(i)) for i in upstream}
+    assert ('rx:SelectMany', 'Play') in names, "Normal_Stim's output does not come from Play"
+    assert ('MulticastSubject', 'Correct_Side') not in names, \
+        "Normal_Stim's output also depends on Correct_Side, so the stage can end before the sound has played"

@@ -33,7 +33,7 @@ No task parameters: the Setup tab holds the **Experimenter** choice (used by Pus
 
 | Panel label | Spreadsheet column | Options | Unit | What it does |
 |---|---|---|---|---|
-| Distribution | `Distribution` | NaN, Uniform, Asym_Left, Asym_Right |  | `Full_Task_Cont` only. How each trial's sound level is drawn on the −1…+1 scale. `Uniform`: evenly across the whole range. `Asym_Left` / `Asym_Right`: one side's levels are drawn from an exponential concentrated near the category boundary, the other side's uniformly — not yet checked after the refactor (see README, Known issues). `NaN` is not valid for `Full_Task_Cont`. |
+| Distribution | `Distribution` | NaN, Uniform, Asym_Left, Asym_Right |  | `Full_Task_Cont` only. How each trial's sound level is drawn on the −1…+1 scale. `Uniform`: evenly across the whole range. `Asym_Left`: sounds on the high side of the boundary are drawn close to it (an exponential just above 0), sounds on the low side are spread evenly, so most of the distribution sits on the low (left) half of the scale. `Asym_Right` is the mirror image. Which spout is the hard side follows from Sound Contingency. `NaN` is not valid for `Full_Task_Cont`. Before 5 Oct 2026 the asymmetric options had a timing fault (see README, Known issues). |
 | Sound Duration | `Sound_Duration` | 50, 100, 150, 200, 250, 300, 350, 400, 450, 500 | ms | Length of the white-noise sound. If Stim Dur Staircase is on, the workflow shortens it during the session. |
 | Nb Of Stim | `Nb_Of_Stim` | NaN, 2, 4, 6, 8 |  | `Full_Task_Disc` only: how many distinct sound levels are used. |
 | Stim Type | `Stim_Type` | NaN, PT, WN |  | Sound type. Only `WN` (white noise) is played by this workflow. |

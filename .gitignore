@@ -27,3 +27,6 @@ obj/
 .vs/
 *.suo
 *.user
+
+# --- Pytest cache ---
+.pytest_cache/
