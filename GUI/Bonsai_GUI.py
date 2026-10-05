@@ -23,6 +23,8 @@ import shutil
 import json
 from pathlib import Path
 
+import params_io
+
 # %%
 # PATHS
 
@@ -50,12 +52,8 @@ RIG_JSON  = r"C:\ProgramData\MouseRoom\rig.json"
 RIGS_CSV  = repo_path + "/Params/Rigs.csv"
 rig_params_file = repo_path + "/Params/Rig_Params.csv"
 
-# Order of columns written to Rig_Params.csv. Every one is emitted even when blank
-# (e.g. "Harp_Beh_Port: ,") so the Bonsai parser's find() always succeeds; a blank
-# yields an empty string, never a wrong slice.
-RIG_PARAM_COLS = ['Room_ID', 'Rig_ID', 'Harp_Beh_Port', 'Sound_Card_Port',
-                  'Left_Valve_Time', 'Right_Valve_Time', 'Speaker_Slope',
-                  'Speaker_Y_Intercept', 'Arduino_Port', 'Arduino_Mega_Port']
+# The columns written to Rig_Params.csv (params_io.RIG_PARAM_COLS) include Arduino,
+# normalised from Rigs.csv's TRUE/FALSE to the True/False the workflow compares with.
 
 
 def resolve_rig():
@@ -84,9 +82,11 @@ def resolve_rig():
                            "but this machine is '%s'. Two machines sharing a rig id?"
                            % (rig_id, row['Hostname'], host))
 
-    line = ", ".join("%s: %s" % (c, row.get(c, '')) for c in RIG_PARAM_COLS) + ","
-    with open(rig_params_file, 'w') as f:
-        f.write(line)
+    pairs = params_io.rig_pairs_from_row(row)
+    problems = params_io.check_pairs(pairs, params_io.RIG_BOOL_KEYS)
+    if problems:
+        raise RuntimeError("Rigs.csv row '%s' is not usable:\n%s" % (rig_id, "\n".join(problems)))
+    params_io.write_rig_params(rig_params_file, pairs)
     return row
 
 
@@ -166,6 +166,7 @@ class State:
     running   = False   # Bonsai is up
     camera_on = False
     flush_on  = False
+    ended_at  = None    # time.time() when End_Protocol was last sent
 
 S = State()
 
@@ -232,16 +233,13 @@ def overwrite_csv():
         messagebox.showwarning("Warning", "All params must be filled in")
         return
 
-    # Join input values into a single string with commas and a trailing comma
-    row = ", ".join([f"{key}: {value}" for (key, _, _, _, _), value in zip(rows, params)])
+    pairs = [(key, value) for (key, _, _, _, _), value in zip(rows, params)]
+    problems = params_io.check_pairs(pairs, params_io.BOOL_KEYS)
+    if problems:
+        messagebox.showwarning("Warning", "Not saved:\n" + "\n".join(problems))
+        return
 
-    # Add trailing comma to the end of the row
-    row += ","
-
-    # Write input values to CSV file
-    with open(subject_params_file, "w", newline="") as file:
-        writer = csv.writer(file)
-        writer.writerow([row])
+    params_io.write_subject_params(subject_params_file, pairs)
 
     # Display success message and change button colors 
     S.loaded = True
@@ -262,22 +260,23 @@ def load_csv():
         subj_params = df[df['Subject'] == subj]
         rows = get_params()
         params = [col for _, _, col, _, _ in rows[1:]]
+        missing = [col for col in params if col not in df.columns]
+        if missing:
+            tk.messagebox.showwarning("Warning", "Spreadsheet is missing columns:\n" + "\n".join(missing))
+            return
         vars_and_dropdowns = zip(params,
                                  [var  for _, var, _, _, _  in rows[1:]],
                                  [dd   for _, _, _, dd, _   in rows[1:]],
                                  [cast for _, _, _, _, cast in rows[1:]])
 
-        values = [subj] + [subj_params[col].values[0] for col in params]
-        row = ", ".join([f"{key}: {value}"
-                         for (key, _, _, _, _), value in zip(rows, values)])
+        pairs = params_io.subject_pairs_from_row(subj_params.iloc[0])
+        problems = params_io.check_pairs(pairs, params_io.BOOL_KEYS)
+        if problems:
+            tk.messagebox.showwarning("Warning", "Not loaded - fix the spreadsheet row:\n" + "\n".join(problems))
+            return
 
-        # Add trailing comma to the end of the row
-        row += ","
-        
-        with open(subject_params_file, mode='w', newline='') as file:
-            writer = csv.writer(file)
-            writer.writerow([row,])
-        
+        params_io.write_subject_params(subject_params_file, pairs)
+
         for param, var, dropdown, cast in vars_and_dropdowns:
             value = subj_params[param].values[0]
             if cast is not None:
@@ -299,8 +298,7 @@ def load_csv():
 def launch_bonsai():
     global process
     if S.running:
-        client = SimpleUDPClient("127.0.0.1", 1334)
-        client.send_message("/GUI", "End_Protocol")
+        send_end_protocol()
         S.running = False
         refresh_buttons()
         return
@@ -326,18 +324,47 @@ def launch_bonsai():
     refresh_buttons()
 
 
+CLOSE_FILES_WAIT_S = 4   # the workflow closes its CSVs 2 s after End_Protocol
+
+
+def send_end_protocol():
+    SimpleUDPClient("127.0.0.1", 1334).send_message("/GUI", "End_Protocol")
+    S.ended_at = time.time()
+
+
 def kill_bonsai():
+    """Stop Bonsai without losing the end of the data files.
+
+    Killing the process discards whatever the CsvWriters still hold in memory, so
+    if a session is running, End_Protocol goes out first and the kill waits until
+    the workflow has had time to close its files."""
+    if S.running:
+        send_end_protocol()
+        S.running = False
+        refresh_buttons()
+    wait_s = 0 if S.ended_at is None else CLOSE_FILES_WAIT_S - (time.time() - S.ended_at)
+    if wait_s > 0:
+        status_label.config(text='Closing data files...')
+        root.after(int(wait_s * 1000), _terminate_bonsai)
+    else:
+        _terminate_bonsai()
+
+
+def _terminate_bonsai():
+    """The original kill: only acts if this GUI launched something."""
     if process is not None:
         process.terminate()
         process.wait()
         for proc in psutil.process_iter(['pid', 'name']):
             if proc.info['name'] == "Bonsai.exe":
                 proc.kill()
+    S.ended_at = None
+    refresh_buttons()
                 
 def camera():
     global process
     if S.camera_on:
-        kill_bonsai()
+        _terminate_bonsai()
         S.camera_on = False
         _paint(camera_button, COL_OK)
         return
@@ -365,7 +392,7 @@ def open_in_editor():
 def flush_rig():
     global process
     if S.flush_on:
-        kill_bonsai()
+        _terminate_bonsai()
         S.flush_on = False
         _paint(flush_rig_button, COL_OK)
         return
@@ -474,68 +501,10 @@ my_font = font.Font(family='Segoe UI', size=12)
 mouse_room_params_df = pd.read_excel(mouse_room_params_path, sheet_name='Params')
 subject_option_list  = mouse_room_params_df.Subject.unique().tolist()
 
-# Option lists reused across several params.
-EPOCHS = ['Sound', 'Delay', 'Air_Puff', 'Go_Cue', 'Response_Window',
-          'Feedback', 'Reward', 'Timeout', 'Inter_Trial_Interval']
-PROPS  = ['NaN', '0.1', '0.2', '0.3', '0.4', '0.5', '0.6', '0.7', '0.8', '0.9', '1.0']
-
-TABS = ['Setup', 'Session', 'Stimulus', 'Timing', 'Contingency',
-        'Anti-bias', 'Opto', 'Opto Timing', 'Debug']
-
-# SPEC is the single source of truth. Row order sets the key order in
-# Subject_Params.csv; the 'tab' column sets where the widget appears. The two are
-# independent, so this list stays in the original key order on purpose.
-SPEC = [
-    # key                             xlsx column                       label                                options                                  cast   tab
-    ('Animal_ID',                     'Subject',                        "Subject:",                          subject_option_list,                     None,  'Session'),
-    ('Protocol',                      'Protocol',                       "Protocol:",                         ["SOUND_CAT_DISC", "SOUND_CAT_CONT", "PRO_ANTI", "SOUND_CAT"], None, 'Session'),
-    ('Stage',                         'Stage',                          "Stage:",                            ['Habituation', 'Lick_To_Release', 'Three_And_Three', 'Full_Task_Disc', 'Full_Task_Cont', 'Habituation_cont', 'Lick_To_Release_cont'], int, 'Session'),
-    ('Session_Type',                  'Session_Type',                   "Session Type:",                     ['regular', 'opto', 'masking', 'washout', 'alm_control_uni', 'alm_control_bi'], str, 'Session'),
-    ('Distribution',                  'Distribution',                   "Distribution:",                     ['NaN', 'Uniform', 'Asym_Left', 'Asym_Right'], None, 'Stimulus'),
-    ('Sound_Duration',                'Sound_Duration',                 "Sound Duration:",                   [50, 100, 150, 200, 250, 300, 350, 400, 450, 500], None, 'Stimulus'),
-    ('Nb_Of_Stim',                    'Nb_Of_Stim',                     "Nb Of Stim:",                       [np.nan, 2, 4, 6, 8],                    int,   'Stimulus'),
-    ('Stim_Type',                     'Stim_Type',                      "Stim Type:",                        ['NaN', 'PT', 'WN'],                     None,  'Stimulus'),
-    ('AntiBias',                      'AntiBias',                       "AntiBias:",                         ['NaN', 'True', 'False'],                str,   'Anti-bias'),
-    ('Emulator',                      'Emulator',                       "Emulator:",                         ['True', 'False'],                       str,   'Debug'),
-    ('Air_Puff_Contingency_Rule',     'Air_Puff_Contingency_Rule',      "Rule:",                             ['NaN', 'Pro_Only', 'Anti_Only', 'Blocks_30', 'Blocks_15', 'Random_Alternation'], None, 'Contingency'),
-    ('Show_Contingency_Switches',     'Show_Contingency_Switches',      "Show Contingency \n Switches:",     ['NaN', 'True', 'False'],                str,   'Contingency'),
-    ('Working_Memory_Type',           'Working_Memory_Type',            "Working Memory \n Type:",           ['NaN', 'Fixed', 'Variable'],            None,  'Contingency'),
-    ('Sound_Air_Puff_Contingency',    'Sound_Air_Puff_Contingency',     "Sound Air \n Puff Contingency:",    ['Low_Pro_High_Anti', 'Low_Anti_High_Pro'], None, 'Contingency'),
-    ('Sound_Contingency',             'Sound_Contingency',              "Sound \n Contingency:",             ['Low_Left_High_Right', 'Low_Right_High_Left'], None, 'Contingency'),
-    ('Opto_ON',                       'Opto_ON',                        "Opto ON:",                          ['NaN', 'True', 'False'],                str,   'Opto'),
-    ('Perc_Opto_Trials',              'Perc_Opto_Trials',               "% Trials:",                         np.arange(0, 110, 5),                    None,  'Opto'),
-    ('Light_Freq (Hz)',               'Light_Freq (Hz)',                "Light Freq (Hz):",                  np.arange(0, 110, 10),                   None,  'Opto'),
-    ('Opto_Onset_1',                  'Opto_Onset_1',                   "Onset_1:",                          EPOCHS,                                  None,  'Opto Timing'),
-    ('Opto_Onset_2',                  'Opto_Onset_2',                   "Onset_2:",                          EPOCHS,                                  None,  'Opto Timing'),
-    ('Opto_Offset_1',                 'Opto_Offset_1',                  "Offset_1:",                         EPOCHS,                                  None,  'Opto Timing'),
-    ('Opto_Offset_2',                 'Opto_Offset_2',                  "Offset_2:",                         EPOCHS,                                  None,  'Opto Timing'),
-    ('Opto_Duration',                 'Opto_Duration',                  "Duration:",                         np.arange(0, 1010, 100),                 None,  'Opto Timing'),
-    ('Stimulation_Site',              'Stimulation_Site',               "Stim Site:",                        ['NaN', 'PPC', 'ACC', 'ALM'],            None,  'Opto'),
-    ('Stimulation_Type',              'Stimulation_Type',               "Stim Type:",                        ['NaN', 'Unilateral_Left', 'Unilateral_Right', 'Bilateral'], None, 'Opto'),
-    ('AntiBias_Exp_Rate',             'AntiBias_Exp_Rate',              "AB_Exp_Rate:",                      [np.nan, 0.5, 1.0, 1.5, 2.0, 2.5, 3.0],  None,  'Anti-bias'),
-    ('AntiBias_Window',               'AntiBias_Window',                "AB_Window:",                        [np.nan, 10, 20, 30, 40, 50],            int,   'Anti-bias'),
-    ('AntiBias_Sigmoid_Slope',        'AntiBias_Sigmoid_Slope',         "AB_Slope:",                         [np.nan, 0.5, 1.0, 1.5, 2.0, 2.5, 3.0],  None,  'Anti-bias'),
-    ('Agent_Sim',                     'Agent_Sim',                      "Agent Sim:",                        ['NaN', 'True', 'False'],                str,   'Debug'),
-    ('Agent_Performance',             'Agent_Performance',              "Agent \n Performance:",             PROPS,                                   None,  'Debug'),
-    ('Agent_Bias',                    'Agent_Bias',                     "Agent Bias:",                       PROPS,                                   None,  'Debug'),
-    ('Stim_Dur_Staircase',            'Stim_Dur_Staircase',             "Stim Dur Staircase:",               ['NaN', 'True', 'False'],                str,   'Stimulus'),
-    ('Stim_Dur_Staircase_Perf_Thresh','Stim_Dur_Staircase_Perf_Thresh', "Stim Dur Staircase \n Perf Thresh:", PROPS,                                  None,  'Stimulus'),
-    ('Stim_Dur_Staircase_Step',       'Stim_Dur_Staircase_Step',        "Stim Dur Staircase \n Step:",       ['NaN', '10', '20', '30', '40', '50'],   None,  'Stimulus'),
-    ('Min_Stim_Dur',                  'Min_Stim_Dur',                   "Min Stim Dur:",                     ['NaN', '50', '100', '150', '200', '250', '300'], None, 'Stimulus'),
-    ('Opto_Type',                     'Opto_Type',                      "Opto Type:",                        ['NaN', 'Zapit', 'Fiber'],               None,  'Opto'),
-    ('Zapit_Nb_Conditions',           'Zapit_Nb_Conditions',            "Zapit Nb \n Conditions:",           ['NaN', 1, 2, 3, 4, 5, 6, 7, 8, 9, 10],  int,   'Opto'),
-    ('Inter_Trial_Interval',          'Inter_Trial_Interval',           "Inter Trial \n Interval:",          np.arange(0, 11, 1),                     None,  'Timing'),
-    ('Timeout_Duration',              'Timeout_Duration',               "Timeout \n Duration:",              np.arange(0, 11, 1),                     None,  'Timing'),
-    ('Response_Window',               'Response_Window',                "Response \n Window:",               np.arange(0, 11, 1),                     None,  'Timing'),
-    ('Stim_Range_Min',                'Stim_Range_Min',                 "Stim Range \n Min:",                np.arange(40, 100, 1),                   int,   'Stimulus'),
-    ('Stim_Range_Max',                'Stim_Range_Max',                 "Stim Range \n Max:",                np.arange(40, 1000, 1),                  int,   'Stimulus'),
-    ('Go_Cue_Duration',               'Go_Cue_Duration',                "Go Cue \n Duration:",               np.arange(40, 100, 100),                 None,  'Timing'),
-    ('Visualiser_Window_Size',        'Visualiser_Window_Size',         "Visualiser \n Window Size:",        np.arange(10, 50, 5),                    int,   'Debug'),
-    ('Stable_Start',                  'Stable_Start',                   "Stable Start:",                     ['NaN', 'True', 'False'],                str,   'Anti-bias'),
-    ('Stable_Start_Window',           'Stable_Start_Window',            "Stable Start \n Window:",           np.arange(10, 55, 5),                    int,   'Anti-bias'),
-    ('Max_Trials_Consec',             'Max_Trials_Consec',              "Max Trials \n Consec:",             np.arange(2, 11, 1),                     int,   'Anti-bias'),
-    ('Stable_Stim_Dist_Boundary',     'Stable_Stim_Dist_Boundary',      "Stable Stim \n Dist Boundary:",     np.arange(0, 1, 0.1),                    None,  'Anti-bias'),
-]
+# SPEC (the single source of truth for keys, xlsx columns, options and tabs)
+# lives in params_io so it can be tested without opening the window.
+TABS = params_io.TABS
+SPEC = params_io.build_spec(subject_option_list)
 
 
 # %%
