@@ -7999,7 +7999,7 @@ def process(value):
                                 <Name>Right_Valve</Name>
                               </Expression>
                               <Expression xsi:type="SubscribeSubject">
-                                <Name>Left_Valve_Time</Name>
+                                <Name>Right_Valve_Time</Name>
                               </Expression>
                               <Expression xsi:type="PropertyMapping">
                                 <PropertyMappings>
@@ -8673,7 +8673,7 @@ def process(value):
                                 <Name>Right_Valve</Name>
                               </Expression>
                               <Expression xsi:type="SubscribeSubject">
-                                <Name>Left_Valve_Time</Name>
+                                <Name>Right_Valve_Time</Name>
                               </Expression>
                               <Expression xsi:type="PropertyMapping">
                                 <PropertyMappings>
@@ -9459,7 +9459,7 @@ def process(value):
                                       <Name>Right_Valve</Name>
                                     </Expression>
                                     <Expression xsi:type="SubscribeSubject">
-                                      <Name>Left_Valve_Time</Name>
+                                      <Name>Right_Valve_Time</Name>
                                     </Expression>
                                     <Expression xsi:type="PropertyMapping">
                                       <PropertyMappings>
@@ -12510,7 +12510,7 @@ def process(value):
                                             <Name>Right_Valve</Name>
                                           </Expression>
                                           <Expression xsi:type="SubscribeSubject">
-                                            <Name>Left_Valve_Time</Name>
+                                            <Name>Right_Valve_Time</Name>
                                           </Expression>
                                           <Expression xsi:type="PropertyMapping">
                                             <PropertyMappings>
@@ -16605,7 +16605,7 @@ def process(value):
                                             <Name>Right_Valve</Name>
                                           </Expression>
                                           <Expression xsi:type="SubscribeSubject">
-                                            <Name>Left_Valve_Time</Name>
+                                            <Name>Right_Valve_Time</Name>
                                           </Expression>
                                           <Expression xsi:type="PropertyMapping">
                                             <PropertyMappings>

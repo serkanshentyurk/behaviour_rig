@@ -57,6 +57,8 @@ class Graph:
                       for e in (edges_el if edges_el is not None else [])]
 
     def kind(self, i):
+        if i is None or i < 0:
+            return None
         el = self.nodes[i]
         kind = el.get(XSI_TYPE) or ''
         if kind == 'Combinator':
@@ -363,3 +365,24 @@ def test_response_latency_comes_from_the_clock_times(graphs):
     zip_node = g.inputs(flatten)['Source1']
     names = [g.name(_resolve(g, zip_node, path.split('.'))[0]) for path in m.groups()]
     assert names == ['First_Lick_Time', 'Window_Open_Time'], names
+
+
+def test_each_spout_uses_its_own_valve_time(graphs):
+    """In SOUND_CAT, a group that opens the right valve must time it with Right_Valve_Time, and the
+    left with Left_Valve_Time. (Until 5 Oct 2026 every right reward used Left_Valve_Time.)"""
+    trial = [path for path in graphs if [n for _, n in path][:2] == ['Trial', 'Sound_Cat_Trial']]
+    failures, checked = [], 0
+    for path in trial:
+        g = graphs[path]
+        opened = {g.name(i) for i in g.find('MulticastSubject')
+                  if g.name(i) in ('Left_Valve', 'Right_Valve')
+                  and g.kind(g.inputs(i).get('Source1', -1)) == 'Combinator:BooleanProperty'
+                  and _text(g.nodes[g.inputs(i)['Source1']].find(B + 'Combinator'), 'Value') == 'true'}
+        if not opened:
+            continue
+        checked += 1
+        times = {g.name(i) for i in g.find('SubscribeSubject') if (g.name(i) or '').endswith('_Valve_Time')}
+        if times != {v + '_Time' for v in opened}:
+            failures.append(f"{'/'.join(n or '' for _, n in path)}: opens {sorted(opened)} but is timed by {sorted(times)}")
+    assert checked >= 10, f"expected at least 10 SOUND_CAT reward groups, found {checked}"
+    assert not failures, "\n".join(failures)
