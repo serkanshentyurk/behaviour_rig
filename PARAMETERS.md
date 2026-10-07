@@ -14,7 +14,7 @@ To change a mouse's defaults, edit the spreadsheet **in the repository** and pus
 
 Yes/no parameters must be exactly `True` or `False`; a blank cell or `NaN` is refused when you press Load, because the workflow would wait for it forever.
 
-Units: Sound Duration, Go Cue Duration, staircase steps and Min Stim Dur are in **milliseconds**; Inter Trial Interval, Timeout Duration and Response Window in **seconds**; Stim Range in **dB**.
+Units: Sound Duration, Delay before window, the go-cue tone's duration, staircase steps and Min Stim Dur are in **milliseconds**; Inter Trial Interval, Timeout Duration and Response Window in **seconds**; Stim Range in **dB**.
 
 ## Setup tab
 
@@ -51,7 +51,12 @@ No task parameters: the Setup tab holds the **Experimenter** choice (used by Pus
 | Inter Trial Interval | `Inter_Trial_Interval` | 0–10 in steps of 1 | s | Wait between the end of one trial and the start of the next. |
 | Timeout Duration | `Timeout_Duration` | 0–10 in steps of 1 | s | Extra wait after an incorrect response (no reward). |
 | Response Window | `Response_Window` | 0–10 in steps of 1 | s | Time allowed to respond once the window opens. No lick in time is an abort: no reward and no timeout. |
-| Go Cue Duration | `Go_Cue_Duration` | 0–1000 in steps of 50 | ms | Silent delay between the end of the sound and the opening of the response window. Despite the name, no go-cue sound is played. |
+| Delay before window (ms) | `Go_Cue_Duration` | 0–1000 in steps of 50 | ms | Silent delay between the end of the sound and the opening of the response window. The spreadsheet column keeps its old name, `Go_Cue_Duration`. If Go Cue Tone is on, the tone plays when this delay ends, i.e. when the window opens; keep the delay at 50 ms or more then (see Go Cue Tone). |
+| Early Lick Abort | `Early_Lick_Abort` | True, False |  | If `True`, a new lick on either spout between the start of the sound and the opening of the response window ends the trial: no window, no reward, then the usual timeout (Timeout Duration). The trial is saved with Trial_Outcome `Early` and Abort_Trial `True`, so performance plots and anti-bias skip it like other aborts; Early_Lick_Time holds the lick. If `False`, early licks are only recorded. `Full_Task_Disc` and `Full_Task_Cont` only. |
+| Go Cue Tone | `Go_Cue_Sound` | True, False |  | If `True`, the sound card plays a pure tone when the response window opens, and licks count from the tone's onset. Applies to the full-task stages; the setting is shared, so it would also play in `PRO_ANTI`'s full-task stages if switched on there. Keep Delay before window at 50 ms or more: the white noise is ended by starting sound slot 30 on the card, and if that happens just after the tone starts it replaces the tone. |
+| Go Cue Freq (Hz) | `Go_Cue_Freq` | 1000–20000 in steps of 500 | Hz | Tone frequency. The sound card generates it itself, so nothing needs uploading to the card. |
+| Go Cue Level (dB) | `Go_Cue_Level` | 40–90 in steps of 1 | dB | Tone level, converted to a sound-card setting with the rig's speaker calibration. That calibration was made with white noise, so the tone's real level can differ; calibrate the tone separately if the exact level matters. |
+| Go Cue Tone Duration (ms) | `Go_Cue_Sound_Duration` | 20–1000 in steps of 10 | ms | Tone length. The tone is ended the same way as the white noise (by starting sound slot 30). |
 
 ## Contingency tab
 

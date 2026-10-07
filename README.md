@@ -21,13 +21,15 @@ This is lab instrumentation. It drives specific hardware on specific Windows PCs
 A `SOUND_CAT` trial in the full task (`Full_Task_Cont` / `Full_Task_Disc`) goes:
 
 1. Sound: white noise at a level set by the trial's stimulus value, for Sound_Duration.
-2. Go cue: a silent delay of Go_Cue_Duration.
-3. Response window: up to Response_Window seconds. The first lick that **starts** after the window opens is the choice.
+2. Delay: a silent delay of Go_Cue_Duration (shown as "Delay before window" in the panel; the trial phase is still called `Go_Cue` in the data).
+3. Response window: up to Response_Window seconds. If Go Cue Tone is on, a pure tone starts as the window opens. The first lick that **starts** after the window opens is the choice.
 4. Outcome:
    - Correct: a reward from that spout's valve.
    - Incorrect: a timeout of Timeout_Duration.
    - No lick: an abort, with neither.
 5. Inter-trial interval.
+
+If Early Lick Abort is on, a new lick during the sound or the delay ends the trial at once: no window, no reward, the usual timeout, outcome `Early`.
 
 ## What's in the repository
 
@@ -102,7 +104,7 @@ The main columns:
 - **Trial and stimulus.** `Trial_Number` and `Stim_Relative` (the stimulus on a −1…+1 scale; 0 is the category boundary).
 - **Response.**
   - `First_Lick` (Left or Right), `Correct` and `Abort_Trial`.
-  - `Trial_Outcome`: Correct, Incorrect or Abort.
+  - `Trial_Outcome`: Correct, Incorrect, Abort (no lick in the window) or Early (ended by an early lick, when Early Lick Abort is on). Early trials also have `Abort_Trial` True, and blank `Window_Open_Time`, `First_Lick_Time` and `Response_Latency`.
   - `Reward_Side`.
 - **Timing.**
   - `Window_Open_Time` and `First_Lick_Time`, plus `Response_Latency` in ms.
@@ -128,6 +130,7 @@ Things to know when analysing it:
   - In Python: `row = list(csv.reader(open(path)))[1]; params = dict(zip(row[0::2], row[1::2]))`.
 - **Trial_Epochs.**
   - A trial runs `Sound`, `Go_Cue`, `Response_Window`, then `Feedback` followed by `Reward` or `Timeout`, then `Inter_Trial_Interval`. Aborts go straight from the response window to the interval.
+  - An `Early` trial goes from `Sound` (or `Go_Cue`) straight to `Feedback` and `Timeout`, so opto light set to switch off at `Feedback` still does.
   - The first row is a blank start-up value.
 - **Long_Form_Timestamps.**
   - `Sound`: the stimulus value, at the moment the sound is triggered.
@@ -170,6 +173,8 @@ They read the workflow file directly, with no Bonsai or hardware, and check that
 - `GUI/Extensions.csproj` is present;
 - in `SOUND_CAT`, each spout's valve is timed by its own calibration;
 - in `Full_Task_Cont`, the stimulus stage ends only after the sound has played;
+- the early-lick abort cuts the trial before the window and ends with the timeout and outcome `Early`;
+- the go-cue tone sets its level, plays at the window opening and stops after its duration;
 - the window layout lines up with the workflow;
 - the response, timing and latency rules described above are wired as intended.
 
@@ -186,6 +191,10 @@ These are current as of 5 October 2026.
 - **Asymmetric distributions, fixed on 5 October 2026.** Before that, with `Asym_Left` or `Asym_Right` the stimulus stage ended as soon as the side was chosen. The go-cue delay started at sound onset, so the window opened as the sound ended, and some trials played no sound at all; those trials were scored, and rewarded, against the previous trial's stimulus. Sessions run with these distributions before that date are affected. `Asym_Left` was checked in the emulator before the fix; check both after it.
 - **The "fresh licks only" rule hasn't been tested on hardware** with a contact held through the window opening.
 - **Trial timing follows the display refresh.** The sound and go-cue delays vary by about one frame, about 17 ms. The times recorded in the files are exact.
-- **There is no go-cue sound.** The go cue is a silent delay.
+- **The go-cue tone is optional and off by default.**
+  - Its level is only approximate, because the speaker calibration was made with white noise.
+  - With the tone on, keep Delay before window at 50 ms or more. The white noise is ended by starting sound slot 30 on the card, and if that lands just after the tone starts it replaces the tone.
+  - The tone isn't logged separately; it starts at `Window_Open_Time`.
+  - It can't be heard in emulator mode, because there's no sound card.
 - **Lick times lag on Arduino rigs** by about 25 ms, because the serial link runs at 9600 baud.
 - **Masking and opto sessions look identical** in the data except for `Session_Type`. The laser power is set in Zapit.

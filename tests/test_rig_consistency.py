@@ -407,3 +407,99 @@ def test_stimulus_stage_ends_only_after_the_sound(graphs):
     # A one-input Merge means 'flatten a stream of streams' in Bonsai; fed an ordinary stream it fails to build.
     lonely = [i for i in upstream if g.kind(i) == 'Combinator:rx:Merge' and len(g.inputs(i)) < 2]
     assert not lonely, f"Normal_Stim has a Merge with one input on its output path (node {lonely}); Bonsai will reject it"
+
+
+def _upstream(g, node):
+    seen, todo = set(), [node]
+    while todo:
+        n = todo.pop()
+        for src in g.inputs(n).values():
+            if src not in seen:
+                seen.add(src); todo.append(src)
+    return seen
+
+
+def _path_of(graphs, g):
+    return [path for path, gg in graphs.items() if gg is g][0]
+
+
+def test_early_lick_abort_stops_the_trial(graphs):
+    """With Early_Lick_Abort on, an early lick cuts the trial before Go_Cue and before the window,
+    then runs Feedback -> the usual timeout -> outcome 'Early', and marks the trial as aborted."""
+    failures = []
+    for stage in FULL_TASK_STAGES:
+        g = group(graphs, 'Trial', 'Sound_Cat_Trial', stage)
+        stim, go = g.find('rx:SelectMany', 'Stim')[0], g.find('rx:SelectMany', 'Go_Cue')[0]
+        flags = [i for i in g.find('rx:Condition')
+                 if g.kind(g.inputs(i).get('Source1')) == 'MemberSelector'
+                 and any(g.kind(u) == 'SubscribeSubject' and g.name(u) == 'Early_Lick_Abort' for u in _upstream(g, i))]
+        if len(flags) != 1:
+            failures.append(f"{stage}: no single early-abort signal gated by Early_Lick_Abort"); continue
+        e = flags[0]
+        cuts = [i for i in g.find('Combinator:rx:TakeUntil') if g.inputs(i).get('Source2') == e]
+        before_go = [c for c in cuts if g.inputs(c).get('Source1') == stim and g.inputs(go).get('Source1') == c]
+        after_go = [c for c in cuts if g.inputs(c).get('Source1') == go]
+        if not before_go:
+            failures.append(f"{stage}: Go_Cue is not cut off by the early-abort signal")
+        targets = {g.name(t) or g.kind(t) for c in after_go for t in g.outputs(c)}
+        if not {'Response', 'Record_Latency', 'Combinator:rx:Delay'} <= targets:
+            failures.append(f"{stage}: the window is not cut off by the early-abort signal (cut feeds {sorted(targets)})")
+        if any(src == go for t in g.find('rx:SelectMany', 'Response') for src in g.inputs(t).values()):
+            failures.append(f"{stage}: Response is still fed by Go_Cue directly")
+        early = [i for i in g.find('Combinator:StringProperty') if _text(g.nodes[i].find(B + 'Combinator'), 'Value') == 'Early']
+        if len(early) != 1 or e not in _upstream(g, early[0]):
+            failures.append(f"{stage}: no 'Early' outcome reached from the early-abort signal")
+        else:
+            up = _upstream(g, early[0])
+            if not any(g.kind(u) == 'MulticastSubject' and g.name(u) == 'Trial_Epoch' for u in up):
+                failures.append(f"{stage}: the early abort does not pass through the Feedback epoch")
+            outcome_merge = [m for m in g.outputs(early[0]) if g.kind(m) == 'Combinator:rx:Merge']
+            if not outcome_merge or not any(g.kind(t) == 'Combinator:rx:Take' for t in g.outputs(outcome_merge[0])):
+                failures.append(f"{stage}: 'Early' does not reach the Trial_Outcome merge")
+            timeout = g.inputs(early[0]).get('Source1')            # the group that feeds 'Early'
+            sub = graphs.get(_path_of(graphs, g) + ((timeout, g.name(timeout)),)) if timeout is not None else None
+            if sub is None or not any(sub.kind(i) == 'SubscribeSubject' and sub.name(i) == 'Timeout_Duration' for i in range(len(sub.nodes))):
+                failures.append(f"{stage}: the early abort is not followed by the Timeout_Duration timeout")
+        if not any(g.kind(t) == 'Combinator:BooleanProperty' and any(g.name(m) == 'Abort_Trial' for m in g.outputs(t))
+                   for t in g.outputs(e)):
+            failures.append(f"{stage}: the early abort does not set Abort_Trial")
+    assert not failures, "\n".join(failures)
+
+
+def test_go_cue_tone_plays_when_the_window_opens(graphs):
+    """With Go_Cue_Sound on, the sound card sets the tone's attenuation (registers 34/35), plays
+    Go_Cue_Freq through register 32 when Trial_Epoch becomes Response_Window, and after
+    Go_Cue_Sound_Duration stops it the same way the white noise is stopped (slot 30)."""
+    g = group(graphs, 'Hardware', 'Sound_Card')
+    here = _path_of(graphs, g)
+    device = [i for i in g.find('Combinator:rx:Merge') if len(g.inputs(i)) >= 8]
+    assert len(device) == 1, "no device message merge with the tone's inputs"
+    feeding = set(g.inputs(device[0]).values())
+
+    def message(nm):
+        i = g.find('rx:SelectMany', nm)
+        assert len(i) == 1, f"no {nm} group"
+        sub = graphs[here + ((i[0], nm),)]
+        msg = [j for j in range(len(sub.nodes)) if sub.kind(j) == 'Combinator:harp:CreateHarpMessage'][0]
+        address = int(_text(sub.nodes[msg].find(B + 'Combinator'), 'Address'))
+        assert i[0] in feeding, f"{nm} does not reach the sound card"
+        return i[0], address, sub
+
+    left, a_left, _ = message('Go_Cue_Left')
+    right, a_right, _ = message('Go_Cue_Right')
+    play, a_play, _ = message('Play_Go_Cue')
+    stop, a_stop, stop_sub = message('Stop_Go_Cue')
+    assert (a_left, a_right, a_play, a_stop) == (34, 35, 32, 32), (a_left, a_right, a_play, a_stop)
+    slot = [_text(stop_sub.nodes[j].find(B + 'Combinator'), 'Value') for j in range(len(stop_sub.nodes))
+            if stop_sub.kind(j) == 'Combinator:IntProperty']
+    assert slot == ['30'], f"tone stop should start slot 30 like the white noise stop, found {slot}"
+    up = _upstream(g, play)
+    names = {g.name(u) for u in up if g.kind(u) == 'SubscribeSubject'}
+    assert {'Trial_Epoch', 'Go_Cue_Sound', 'Go_Cue_Freq', 'Go_Cue_Level'} <= names, names
+    assert left in up and right in up, "the tone can start before its attenuation is set"
+    window = [u for u in up if g.kind(u) == 'Equal'
+              and [_text(c, 'Value') for c in g.nodes[u] if _local(c.tag) == 'Operand'] == ['Response_Window']]
+    assert window, "the tone is not triggered by Trial_Epoch == Response_Window"
+    delay = [d for d in _upstream(g, stop) if g.kind(d) == 'Combinator:rx:Delay']
+    assert delay and any(g.name(u) == 'Go_Cue_Sound_Duration' for u in _upstream(g, delay[0])), \
+        "the tone is not stopped after Go_Cue_Sound_Duration"

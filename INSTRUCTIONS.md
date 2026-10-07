@@ -59,7 +59,7 @@ A field turns yellow when its value is loaded or changed; that is normal.
 4. **Check the settings.** At least look at:
    - **Session:** Stage and Session Type. Session Type is the only record of what kind of session this was.
    - **Opto:** Opto ON, Opto Type, Stim Site and Stim Type.
-   - **Timing:** the durations.
+   - **Timing:** the durations, plus the two options **Early Lick Abort** (ends the trial if the mouse licks before the window opens) and **Go Cue Tone** (a tone when the window opens). Both are off unless the spreadsheet or you switch them on.
    - **Debug:** Emulator and Agent Sim must both be **False** for a real session.
 
    If you change anything, the status line says "Unsaved changes - press Overwrite". Press **Overwrite params** before launching; Launch refuses otherwise.
@@ -115,6 +115,8 @@ Use a test subject (for example `TEST`), so the test data don't end up in a real
 6. End and kill as in step 7.
 
 The data are written exactly as in a real session. Ignore the first trial of any session, emulated or not: its timing is unreliable.
+
+To try **Early Lick Abort** in the emulator: switch it on, press 1 or 2 while the sound or delay is running, and check that the trial ends with outcome `Early` after the timeout. The **Go Cue Tone** can only be checked on a rig, because the emulator has no sound card.
 
 ## Troubleshooting
 
