@@ -175,6 +175,7 @@ They read the workflow file directly, with no Bonsai or hardware, and check that
 - in `Full_Task_Cont`, the stimulus stage ends only after the sound has played;
 - the early-lick abort cuts the trial before the window and ends with the timeout and outcome `Early`;
 - the go-cue tone sets its level, plays at the window opening and stops after its duration;
+- no group's connections form a loop (Bonsai can't build or open a group with one);
 - the window layout lines up with the workflow;
 - the response, timing and latency rules described above are wired as intended.
 

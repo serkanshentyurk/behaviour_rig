@@ -313,6 +313,19 @@ def test_responses_only_count_licks_that_start_while_listening(graphs):
     assert not failures, "\n".join(failures)
 
 
+def _is_window_opening(g, i):
+    """True if node i fires when Trial_Epoch becomes Response_Window (Condition <- Equal <- SubscribeSubject)."""
+    if i is None or g.kind(i) != 'rx:Condition':
+        return False
+    eq = g.inputs(i).get('Source1')
+    if eq is None or g.kind(eq) != 'Equal':
+        return False
+    if [_text(c, 'Value') for c in g.nodes[eq] if _local(c.tag) == 'Operand'] != ['Response_Window']:
+        return False
+    src = g.inputs(eq).get('Source1')
+    return g.kind(src) == 'SubscribeSubject' and g.name(src) == 'Trial_Epoch'
+
+
 def test_trial_times_are_declared_reset_and_set(graphs):
     failures = []
     variables = group(graphs, 'Variables')
@@ -348,9 +361,9 @@ def test_trial_times_are_declared_reset_and_set(graphs):
             chain = upstream(g, w, 4)
             if [k for k, _ in chain] == ['MemberSelector', 'Combinator:rx:Timestamp', 'Combinator:rx:Take',
                                          'Combinator:rx:TakeUntil']:
-                ok |= g.inputs(chain[3][1]).get('Source2') in go_cue
+                ok |= _is_window_opening(g, g.inputs(chain[3][1]).get('Source2'))
         if not ok:
-            failures.append(f"{stage}: Early_Lick_Time is not the first lick before Go_Cue ends")
+            failures.append(f"{stage}: Early_Lick_Time is not the first lick before the window opens")
     assert not failures, "\n".join(failures)
 
 
@@ -503,3 +516,35 @@ def test_go_cue_tone_plays_when_the_window_opens(graphs):
     delay = [d for d in _upstream(g, stop) if g.kind(d) == 'Combinator:rx:Delay']
     assert delay and any(g.name(u) == 'Go_Cue_Sound_Duration' for u in _upstream(g, delay[0])), \
         "the tone is not stopped after Go_Cue_Sound_Duration"
+
+
+
+def test_no_group_contains_a_loop(graphs):
+    """Bonsai can neither build nor draw a group whose connections form a loop; it fails at that group
+    and the editor crashes when the group is opened. (Feedback has to go through a subject instead.)"""
+    loops = []
+    for path, g in graphs.items():
+        n = len(g.nodes)
+        nxt = {i: [] for i in range(n)}
+        for a, b, _ in g.edges:
+            nxt[a].append(b)
+        state = [0] * n
+        for start in range(n):
+            if state[start]:
+                continue
+            stack = [(start, iter(nxt[start]))]
+            state[start] = 1
+            while stack:
+                u, it = stack[-1]
+                v = next(it, None)
+                if v is None:
+                    state[u] = 2; stack.pop()
+                elif state[v] == 1:
+                    loops.append('/'.join(name or str(i) for i, name in path) or 'top level')
+                    break
+                elif state[v] == 0:
+                    state[v] = 1; stack.append((v, iter(nxt[v])))
+            else:
+                continue
+            break
+    assert not loops, f"connections form a loop in: {sorted(set(loops))}"
