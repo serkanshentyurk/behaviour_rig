@@ -478,47 +478,6 @@ def test_early_lick_abort_stops_the_trial(graphs):
             failures.append(f"{stage}: the early abort does not set Abort_Trial")
     assert not failures, "\n".join(failures)
 
-
-def test_go_cue_tone_plays_when_the_window_opens(graphs):
-    """With Go_Cue_Sound on, the sound card sets the tone's attenuation (registers 34/35), plays
-    Go_Cue_Freq through register 32 when Trial_Epoch becomes Response_Window, and after
-    Go_Cue_Sound_Duration stops it the same way the white noise is stopped (slot 30)."""
-    g = group(graphs, 'Hardware', 'Sound_Card')
-    here = _path_of(graphs, g)
-    device = [i for i in g.find('Combinator:rx:Merge') if len(g.inputs(i)) >= 8]
-    assert len(device) == 1, "no device message merge with the tone's inputs"
-    feeding = set(g.inputs(device[0]).values())
-
-    def message(nm):
-        i = g.find('rx:SelectMany', nm)
-        assert len(i) == 1, f"no {nm} group"
-        sub = graphs[here + ((i[0], nm),)]
-        msg = [j for j in range(len(sub.nodes)) if sub.kind(j) == 'Combinator:harp:CreateHarpMessage'][0]
-        address = int(_text(sub.nodes[msg].find(B + 'Combinator'), 'Address'))
-        assert i[0] in feeding, f"{nm} does not reach the sound card"
-        return i[0], address, sub
-
-    left, a_left, _ = message('Go_Cue_Left')
-    right, a_right, _ = message('Go_Cue_Right')
-    play, a_play, _ = message('Play_Go_Cue')
-    stop, a_stop, stop_sub = message('Stop_Go_Cue')
-    assert (a_left, a_right, a_play, a_stop) == (34, 35, 32, 32), (a_left, a_right, a_play, a_stop)
-    slot = [_text(stop_sub.nodes[j].find(B + 'Combinator'), 'Value') for j in range(len(stop_sub.nodes))
-            if stop_sub.kind(j) == 'Combinator:IntProperty']
-    assert slot == ['30'], f"tone stop should start slot 30 like the white noise stop, found {slot}"
-    up = _upstream(g, play)
-    names = {g.name(u) for u in up if g.kind(u) == 'SubscribeSubject'}
-    assert {'Trial_Epoch', 'Go_Cue_Sound', 'Go_Cue_Freq', 'Go_Cue_Level'} <= names, names
-    assert left in up and right in up, "the tone can start before its attenuation is set"
-    window = [u for u in up if g.kind(u) == 'Equal'
-              and [_text(c, 'Value') for c in g.nodes[u] if _local(c.tag) == 'Operand'] == ['Response_Window']]
-    assert window, "the tone is not triggered by Trial_Epoch == Response_Window"
-    delay = [d for d in _upstream(g, stop) if g.kind(d) == 'Combinator:rx:Delay']
-    assert delay and any(g.name(u) == 'Go_Cue_Sound_Duration' for u in _upstream(g, delay[0])), \
-        "the tone is not stopped after Go_Cue_Sound_Duration"
-
-
-
 def test_no_group_contains_a_loop(graphs):
     """Bonsai can neither build nor draw a group whose connections form a loop; it fails at that group
     and the editor crashes when the group is opened. (Feedback has to go through a subject instead.)"""

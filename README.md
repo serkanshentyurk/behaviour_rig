@@ -22,7 +22,7 @@ A `SOUND_CAT` trial in the full task (`Full_Task_Cont` / `Full_Task_Disc`) goes:
 
 1. Sound: white noise at a level set by the trial's stimulus value, for Sound_Duration.
 2. Delay: a silent delay of Go_Cue_Duration (shown as "Delay before window" in the panel; the trial phase is still called `Go_Cue` in the data).
-3. Response window: up to Response_Window seconds. If Go Cue Tone is on, a pure tone starts as the window opens. The first lick that **starts** after the window opens is the choice.
+3. Response window: up to Response_Window seconds. The first lick that **starts** after the window opens is the choice.
 4. Outcome:
    - Correct: a reward from that spout's valve.
    - Incorrect: a timeout of Timeout_Duration.
@@ -174,7 +174,6 @@ They read the workflow file directly, with no Bonsai or hardware, and check that
 - in `SOUND_CAT`, each spout's valve is timed by its own calibration;
 - in `Full_Task_Cont`, the stimulus stage ends only after the sound has played;
 - the early-lick abort cuts the trial before the window and ends with the timeout and outcome `Early`;
-- the go-cue tone sets its level, plays at the window opening and stops after its duration;
 - no group's connections form a loop (Bonsai can't build or open a group with one);
 - the window layout lines up with the workflow;
 - the response, timing and latency rules described above are wired as intended.
@@ -191,11 +190,7 @@ These are current as of 5 October 2026.
 - **Some options start no trials.** Protocol `SOUND_CAT_DISC` and `SOUND_CAT_CONT`, and Stage `Habituation_cont` and `Lick_To_Release_cont`, are offered by the panel but have no trial logic.
 - **Asymmetric distributions, fixed on 5 October 2026.** Before that, with `Asym_Left` or `Asym_Right` the stimulus stage ended as soon as the side was chosen. The go-cue delay started at sound onset, so the window opened as the sound ended, and some trials played no sound at all; those trials were scored, and rewarded, against the previous trial's stimulus. Sessions run with these distributions before that date are affected. `Asym_Left` was checked in the emulator before the fix; check both after it.
 - **The "fresh licks only" rule hasn't been tested on hardware** with a contact held through the window opening.
-- **Trial timing follows the display refresh.** The sound and go-cue delays vary by about one frame, about 17 ms. The times recorded in the files are exact.
-- **The go-cue tone is optional and off by default.**
-  - Its level is only approximate, because the speaker calibration was made with white noise.
-  - With the tone on, keep Delay before window at 50 ms or more. The white noise is ended by starting sound slot 30 on the card, and if that lands just after the tone starts it replaces the tone.
-  - The tone isn't logged separately; it starts at `Window_Open_Time`.
-  - It can't be heard in emulator mode, because there's no sound card.
+- **Trial timing follows the display refresh.** The sound and the delay before the window usually vary by about one frame (17 ms), but they can end tens of ms early when the screen loop stalls. On opto sessions this happens on most opto trials, because the trial waits for Zapit's reply before the sound starts. The times recorded in the files are exact.
+- **There is no go-cue sound.** The delay before the window is silent. A go-cue tone using the sound card's built-in tone generator was tried on 7 October 2026 and removed. On the cards' firmware (2.1), the tone left the card refusing the command that ends the white noise until it was switched off and on, which stopped sessions. Any card that played the tone needs a power cycle before it's used again.
 - **Lick times lag on Arduino rigs** by about 25 ms, because the serial link runs at 9600 baud.
 - **Masking and opto sessions look identical** in the data except for `Session_Type`. The laser power is set in Zapit.
