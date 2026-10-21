@@ -9,7 +9,6 @@ import sys
 import xml.etree.ElementTree as ET
 from pathlib import Path
 
-import pandas as pd
 import pytest
 
 REPO = Path(__file__).resolve().parents[1]
@@ -20,6 +19,7 @@ WORKFLOW = REPO / 'Protocols' / 'Auditory_discrimination' / 'Sound_Cat_V2.bonsai
 LAYOUT = WORKFLOW.with_name(WORKFLOW.name + '.layout')          # what Bonsai 2.7 reads
 NEW_STYLE_LAYOUT = WORKFLOW.parent / '.bonsai' / 'Settings' / (WORKFLOW.stem + '.layout')  # Bonsai 2.8+
 XLSX = REPO / 'Params' / 'Mouse_Room_Params.xlsx'
+PRESETS = REPO / 'Params' / 'Presets.csv'
 RIGS = REPO / 'Params' / 'Rigs.csv'
 
 B = '{https://bonsai-rx.org/2018/workflow}'
@@ -152,9 +152,19 @@ def bonsai_parse(line, key, ptype):
 
 # ---------------------------------------------------------------- GUI output
 def subject_lines():
-    df = pd.read_excel(XLSX, sheet_name='Params')
-    for _, row in df.iterrows():
-        yield row['Subject'], params_io.format_line(params_io.subject_pairs_from_row(row))
+    """The line Load writes for every mouse, presets applied."""
+    for mouse in params_io.resolve_all(XLSX, PRESETS):
+        yield mouse.subject, params_io.format_line(mouse.pairs())
+
+
+def preset_lines():
+    """The line every preset would give every mouse, whether or not a mouse uses that preset yet."""
+    presets = params_io.read_presets(PRESETS)
+    for _, row in params_io.read_mice(XLSX).iterrows():
+        for name in presets:
+            trial = row.copy()
+            trial[params_io.PRESET_COL] = name
+            yield f"{row['Subject']} on {name}", params_io.format_line(params_io.resolve(trial, presets).pairs())
 
 
 def rig_lines():
@@ -170,7 +180,7 @@ def graphs():
 
 # ---------------------------------------------------------------- tests
 def test_every_parser_finds_its_key_and_branch(graphs):
-    lines = {'Subject_Params': list(subject_lines()), 'Rig_Params': list(rig_lines())}
+    lines = {'Subject_Params': list(subject_lines()) + list(preset_lines()), 'Rig_Params': list(rig_lines())}
     failures = []
     for key, ptype, source, operands in parsers(graphs):
         for who, line in lines[source]:

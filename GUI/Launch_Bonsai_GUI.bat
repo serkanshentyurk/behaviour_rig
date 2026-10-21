@@ -13,7 +13,7 @@ if exist "%USERPROFILE%\miniconda3\condabin\conda.bat" (
     goto end
 )
 
-REM --- Move to the repo (this .bat lives in GUI/, so go up one) ---
+REM --- Work in GUI/, where this .bat lives (git finds the repository from here) ---
 cd /d "%~dp0"
 
 REM --- Sync to server: take origin/main exactly, discard local edits to

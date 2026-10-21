@@ -17,8 +17,9 @@ The bar at the bottom is visible from every tab:
 | **Launch Bonsai** | starts the session; while a session runs, the same button reads **End Session** |
 | **Kill Bonsai** | closes Bonsai |
 
-Under the buttons are two lines of text:
+Under the buttons are three lines of text:
 - **The rig line** (for example `Rig 31104 (DESKTOP-L4E2IPB)`, in green) says which rig the panel thinks it is.
+- **The preset line** appears after Load: the mouse, its preset (or custom), and any field you have changed since loading.
 - **The status line** says what to do next:
 
 | Status line | Meaning |
@@ -27,7 +28,9 @@ Under the buttons are two lines of text:
 | Ready to launch | settings saved; you can launch |
 | Unsaved changes - press Overwrite | you changed a field since the last save |
 | Bonsai running | a session is running |
+| Session ended - press Kill Bonsai | End Session was pressed; Bonsai is still open |
 | Closing data files... | Kill Bonsai is waiting for the data to be written |
+| Copying data to the server... | Push Data is running |
 
 Button colours:
 - **Green:** ready or done.
@@ -35,7 +38,7 @@ Button colours:
 - **Red:** running, or the stop button.
 - **Grey:** not ready.
 
-A field turns yellow when its value is loaded or changed; that is normal.
+Field colours: after Load, blue fields come from the mouse's preset and yellow fields from its own row in the spreadsheet. A field you change turns orange.
 
 ## Before you start
 
@@ -49,12 +52,12 @@ A field turns yellow when its value is loaded or changed; that is normal.
    - A black window opens first. It updates the code from GitHub and then opens the panel. Leave it open: closing it closes the panel, and it shows error messages if something goes wrong.
    - Check the rig line at the bottom. If it says **RIG NOT CONFIGURED - launch disabled** in red, stop and see Troubleshooting.
 
-2. **Choose the experimenter** on the **Setup** tab (SS or QP). This is only used to decide where Push Data copies to.
+2. **Choose the experimenter** on the **Setup** tab (your initials; the list comes from the files in `GUI\paths`). This is only used to decide where Push Data copies to.
 
 3. **Choose the mouse** on the **Session** tab (Subject), then press **Load params**.
-   - The mouse's row from the spreadsheet fills every tab, the fields turn yellow, and you get "Params successfully loaded".
+   - The mouse's values fill every tab and you get "Params successfully loaded", which says whether a preset was used. If the mouse's Preset is not `custom`, the values its preset sets come from `Params\Presets.csv` (blue fields) and the rest from its row (yellow). If its row holds values the preset replaces, the message lists them.
    - Load params and Launch Bonsai turn green and the status line reads "Ready to launch".
-   - If Load refuses with "Not loaded - fix the spreadsheet row", a value in the spreadsheet is unusable (see Troubleshooting).
+   - If Load refuses with "Not loaded - fix the spreadsheet", a value in the spreadsheet or in `Presets.csv` is unusable (see Troubleshooting).
 
 4. **Check the settings.** At least look at:
    - **Session:** Stage and Session Type. Session Type is the only record of what kind of session this was.
@@ -62,9 +65,9 @@ A field turns yellow when its value is loaded or changed; that is normal.
    - **Timing:** the durations, and **Early Lick Abort** (ends the trial if the mouse licks before the window opens; off unless the spreadsheet or you switch it on).
    - **Debug:** Emulator and Agent Sim must both be **False** for a real session.
 
-   If you change anything, the status line says "Unsaved changes - press Overwrite". Press **Overwrite params** before launching; Launch refuses otherwise.
+   If you change anything, the status line says "Unsaved changes - press Overwrite". Press **Overwrite params** before launching; Launch refuses otherwise. Overwrite lists the fields you changed and asks you to confirm. If you changed a value the mouse's preset sets but left Session Type as the preset's name, it says so, because the data will be labelled with that preset.
 
-   Changes made here apply to **this session only** and are not written back to the spreadsheet. To change a mouse's defaults, the spreadsheet `Params/Mouse_Room_Params.xlsx` has to be edited in the repository and pushed. An edit made on the rig is overwritten the next time the launcher starts.
+   Changes made here apply to **this session only** and are not written back to the spreadsheet. To change a mouse's defaults, the spreadsheet `Params/Mouse_Room_Params.xlsx` has to be edited in the repository and pushed. An edit made on the rig is overwritten the next time the launcher starts. To move a mouse onto a preset, or back to `custom`, change its Preset cell in the spreadsheet; to change what a preset sets for every mouse on it, edit `Params/Presets.csv` the same way.
 
 5. **Opto and masking only: set up Zapit before launching.**
    - **Zapit Nb Conditions** (Opto tab) must equal the number of conditions in the configuration loaded in Zapit. At start-up the session checks this; if Zapit has no configuration loaded or the number differs, the session ends itself.
@@ -74,18 +77,20 @@ A field turns yellow when its value is loaded or changed; that is normal.
    - Bonsai opens and starts the task. Within a few seconds four windows appear: the camera image, a text window with the latest trial's summary, a rolling performance graph and a bar graph. Trials start on their own.
    - The Launch button turns red and reads **End Session**.
    - While the session runs, don't click Stop in Bonsai, don't close Bonsai's windows, and don't edit the workflow.
+   - Launch refuses while any Bonsai is open (Camera, Flush Rig, the editor, or a session not yet killed); press Kill Bonsai first.
 
 7. **Ending the session.**
    - Press **End Session**. The trial in progress is abandoned (it won't appear in Trial_Summary), the valves close, Zapit is told to stop, and the data files are closed about 2 seconds later.
-   - Then press **Kill Bonsai** to close Bonsai.
+   - The status line then says "Session ended - press Kill Bonsai". Press **Kill Bonsai** to close Bonsai.
    - If you press Kill Bonsai without End Session, it sends End Session itself and waits about 4 seconds before closing Bonsai.
    - **Never close Bonsai any other way during a session** (window X, Task Manager, shutting the PC down). The end of every data file is lost.
    - Always Kill Bonsai before launching another session.
 
 8. **Copy the data to the server.** On the Setup tab, press **Push Data**.
-   - It copies session folders from `Data\` on this PC to your folder on the server (the path is in `GUI\paths\serkan.json` or `quentin.json`).
+   - It copies session folders from `Data\` on this PC to your folder on the server (the path is in your file in `GUI\paths`).
    - It only copies mice whose ID starts with your initials (SS…, QP…).
-   - It never overwrites a file already on the server and never deletes anything on the rig.
+   - It never overwrites a file already on the server and never deletes anything on the rig. At the end it says how many files it copied. A file already on the server with a different size (usually copied from an unfinished session) is listed and left alone, so you can check it by hand.
+   - It refuses while Bonsai is open, so that no file is copied while it is still being written.
    - The server drive must be mapped in Windows (any letter).
 
 9. **Check the data** if you want: `Data\<mouse>\<protocol>_<mouse>_<date>\` should contain six CSV files whose names end with the session's start time. The README explains each file.
@@ -125,15 +130,20 @@ To try **Early Lick Abort** in the emulator: switch it on, press 1 or 2 while th
 | Red **RIG NOT CONFIGURED - launch disabled**, with a message | this PC isn't registered: `C:\ProgramData\MouseRoom\rig.json` is missing, names a rig that isn't in `Params\Rigs.csv`, or the computer name doesn't match that row | the message says which; register the rig as in the README |
 | "Select a subject" | no mouse chosen | choose one on the Session tab |
 | "No params available for this subject" | the mouse isn't in the spreadsheet | add a row to the spreadsheet (in the repository) |
-| "Not loaded - fix the spreadsheet row: … must be True or False" | a yes/no column is empty, `NaN`, or another value | fix that cell in the spreadsheet; for this session you can set the field by hand and press Overwrite |
+| "Not loaded - fix the spreadsheet: … must be True or False" | a yes/no column is empty, `NaN`, or another value | fix that cell in the spreadsheet; for this session you can set the field by hand and press Overwrite |
 | "Spreadsheet is missing columns: …" | the spreadsheet is older than the panel | add the listed columns |
+| "Not loaded - fix the spreadsheet: … is not one of: …", "… is not a number" or "… is empty" | a value is misspelt, not a number, or missing where one is needed | fix that cell in the spreadsheet, or in `Presets.csv` if the message names a preset |
+| "Preset '…' is not in Presets.csv" | the mouse's Preset cell names a preset that doesn't exist | correct the Preset cell, or add the preset to `Params\Presets.csv` |
+| "Subject was changed after loading …" | another subject was picked after Load | press Load params for the subject you want |
+| "Bonsai is already open … Press Kill Bonsai first" | Camera, Flush Rig, the editor or an earlier session is still open | press Kill Bonsai, then try again |
 | "All params must be filled in" | a field still says "Select" | fill it in, then Overwrite |
 | "Protocol can't launch without params!" | nothing loaded or saved yet | press Load params (or fill everything in and press Overwrite) |
 | "Params changed since last save - press Overwrite first" | a field changed after the last save | press Overwrite params |
 | "Bonsai.exe not found at …" | Bonsai isn't installed for this Windows user | install Bonsai (README, rig setup) |
 | Bonsai shows "proxy for the unknown type zapit_TCPclient" and won't start | `GUI\Extensions.csproj` is missing | restore it from git; Bonsai needs it to compile the Zapit client |
-| Bonsai opens but no trials ever start | Protocol isn't `SOUND_CAT` or `PRO_ANTI`, or Stage is `Habituation_cont` / `Lick_To_Release_cont`; or, with Zapit, no configuration is loaded or Zapit Nb Conditions doesn't match | check those settings; for anything else, note any red node and its message in Bonsai |
+| Bonsai opens but no trials ever start | with Zapit, no configuration is loaded or Zapit Nb Conditions doesn't match | check those settings; for anything else, note any red node and its message in Bonsai |
 | The windows (graphs, camera, trial text) don't appear | the layout file next to the workflow is missing or doesn't match it | see "Changing the code or the workflow" in the README |
 | Data files stop mid-line or miss the last minutes | Bonsai was closed without End Session | always End Session, then Kill Bonsai |
 | "Select an experimenter before pushing" | no experimenter chosen | choose one on the Setup tab |
 | "No server found on current machine" | the server drive isn't mapped, or the path in `GUI\paths\<name>.json` doesn't exist on it | map the drive and try again |
+| Push Data lists files "on the server with a different size" | an earlier push copied a session before it had finished | compare the two copies by hand; Push Data never overwrites |

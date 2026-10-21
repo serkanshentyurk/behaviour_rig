@@ -1,600 +1,577 @@
-# %%
-# LIBRARIES
+"""Control panel for the room-311 rigs.
 
-import os
-import tkinter as tk
-from tkinter import ttk
-import csv
-from tkinter import font
-from tkinter import messagebox
+Loads a mouse's parameters, starts and stops the Bonsai task workflow, and runs the utilities on
+the Setup tab. Started on a rig by Launch_Bonsai_GUI.bat.
+
+Code that needs no window lives in params_io.py (parameters, presets, rig identity) and
+push_data.py (copying sessions to the server), so the tests can run it off-rig.
+"""
+import platform
+import socket
 import subprocess
-import psutil 
-import pandas as pd
-from pythonosc.udp_client import SimpleUDPClient
-from pythonosc.dispatcher import Dispatcher
-from pythonosc.osc_server import BlockingOSCUDPServer, AsyncIOOSCUDPServer
-import asyncio
-import threading
 import time
-import sys
-import numpy as np
-import datetime
-import shutil
-import json
+import tkinter as tk
+from collections import namedtuple
+from dataclasses import dataclass
 from pathlib import Path
+from tkinter import messagebox, ttk
+
+import psutil
+from pythonosc.udp_client import SimpleUDPClient
 
 import params_io
+import push_data
 
-# %%
-# PATHS
+# ================================================================ paths and constants
+GUI_DIR = Path(__file__).resolve().parent
+REPO = GUI_DIR.parent
+WORKFLOW = REPO / 'Protocols' / 'Auditory_discrimination' / 'Sound_Cat_V2.bonsai'
+CAMERA_WORKFLOW = REPO / 'Params' / 'Camera.bonsai'
+FLUSH_WORKFLOW = REPO / 'Params' / 'Flush_Rig.bonsai'
+MOUSE_PARAMS_XLSX = REPO / 'Params' / 'Mouse_Room_Params.xlsx'
+PRESETS_CSV = REPO / 'Params' / 'Presets.csv'
+RIGS_CSV = REPO / 'Params' / 'Rigs.csv'
+SUBJECT_PARAMS_CSV = REPO / 'Params' / 'Subject_Params.csv'   # written here, read by the workflow
+RIG_PARAMS_CSV = REPO / 'Params' / 'Rig_Params.csv'           # written here, read by the workflow
+EXPERIMENTERS_DIR = GUI_DIR / 'paths'
+DATA_DIR = REPO / 'Data'
+RIG_JSON = Path(r'C:\ProgramData\MouseRoom\rig.json')         # {"rig": "<id>"}, one per rig PC
+BONSAI_EXE = Path.home() / 'AppData' / 'Local' / 'Bonsai' / 'Bonsai.exe'
 
-repo_path              = str(Path(__file__).resolve().parent.parent)
-gui_dir                = str(Path(__file__).resolve().parent)
-protocols_path         = repo_path + '/Protocols/'
-subject_params_file    = repo_path + '/Params/Subject_Params.csv'
-mouse_room_params_path = repo_path + '/Params/Mouse_Room_Params.xlsx'
+# Bonsai resolves the workflow's relative paths (..\Params\..., Extensions\..., ../Data) against
+# its working directory, so every Bonsai started from here runs in GUI/.
+BONSAI_CWD = GUI_DIR
+OSC_ADDRESS = ('127.0.0.1', 1334)   # the workflow listens here for /GUI End_Protocol
+CLOSE_FILES_WAIT_S = 4              # the workflow closes its CSVs 2 s after End_Protocol
+SELECT = 'Select'                   # shown in a field nobody has set
 
-user_profile = str(Path.home())
-bonsai_path  = user_profile + '/AppData/Local/Bonsai/Bonsai.exe'
-
-process = None   # set by launch_bonsai/camera/flush_rig; kill_bonsai reads it
-
-
-# %%
-# RIG IDENTITY
-# Each machine carries C:/ProgramData/MouseRoom/rig.json = {"rig": "<id>"}.
-# The GUI reads it, finds that rig's row in Params/Rigs.csv (the committed source
-# of truth), and writes Params/Rig_Params.csv in the flat "Key: value," format the
-# Bonsai workflow parses. This replaces the old per-machine Desktop copy: rig
-# calibration now lives in version control, one row per machine.
-
-RIG_JSON  = r"C:\ProgramData\MouseRoom\rig.json"
-RIGS_CSV  = repo_path + "/Params/Rigs.csv"
-rig_params_file = repo_path + "/Params/Rig_Params.csv"
-
-# The columns written to Rig_Params.csv (params_io.RIG_PARAM_COLS) include Arduino,
-# normalised from Rigs.csv's TRUE/FALSE to the True/False the workflow compares with.
-
-
-def resolve_rig():
-    """Read rig.json, look up the row in Rigs.csv, write Rig_Params.csv.
-    Returns the rig row (dict). Raises with a clear message on any failure -
-    the caller aborts launch rather than running on the wrong calibration."""
-    import json, csv, socket
-
-    if not os.path.exists(RIG_JSON):
-        raise RuntimeError("No rig.json on this machine (expected at %s).\n"
-                           "This machine has not been registered as a rig." % RIG_JSON)
-    with open(RIG_JSON) as f:
-        rig_id = json.load(f)['rig']
-
-    with open(RIGS_CSV) as f:
-        rows = {r['rig']: r for r in csv.DictReader(f)}
-    if rig_id not in rows:
-        raise RuntimeError("rig.json says '%s' but that is not a row in Rigs.csv.\n"
-                           "Known rigs: %s" % (rig_id, ", ".join(sorted(rows))))
-    row = rows[rig_id]
-
-    # Cross-check hostname: catches a cloned disk image where rig.json rode along.
-    host = socket.gethostname()
-    if row.get('Hostname') and row['Hostname'] != host:
-        raise RuntimeError("rig.json says '%s', whose Hostname is '%s' in Rigs.csv,\n"
-                           "but this machine is '%s'. Two machines sharing a rig id?"
-                           % (rig_id, row['Hostname'], host))
-
-    pairs = params_io.rig_pairs_from_row(row)
-    problems = params_io.check_pairs(pairs, params_io.RIG_BOOL_KEYS)
-    if problems:
-        raise RuntimeError("Rigs.csv row '%s' is not usable:\n%s" % (rig_id, "\n".join(problems)))
-    params_io.write_rig_params(rig_params_file, pairs)
-    return row
-
-
-    
-# %%
-# add opto_type and zapit_nb_conditions to params
-
-# FUNCTIONAL CODE
-
-# Function to copy all contents
-def copy_all_contents(src, dest, user=None, is_top_level=True):
-    if is_top_level:
-        if isinstance(user, str):
-            user_str = user
-        else:
-            user_str = user.get()
-    else:
-        user_str = None  # Don't filter subdirectories
-        
-    if not os.path.exists(dest):
-        os.makedirs(dest)
-
-    for item in os.listdir(src):
-        # Only filter at top level
-        if is_top_level and user_str and not item.startswith(user_str):
-            continue
-            
-        src_item = Path(src) / Path(item)
-        dest_item = Path(dest) / Path(item)
-
-        if os.path.isdir(src_item):
-            if not os.path.exists(dest_item):
-                shutil.copytree(src_item, dest_item)
-            else:
-                copy_all_contents(src_item, dest_item, user=user, is_top_level=False)
-        else:
-            if not os.path.exists(dest_item):
-                shutil.copy2(src_item, dest_item)
-def get_mapped_drives():
-    return [p.device for p in psutil.disk_partitions(all=True) if 'remote' in p.opts]
-
-
-# ---- application state ----------------------------------------------------
-# Explicit state, NOT button colours. The old code read run_protocol_button['bg']
-# to decide what to do, which meant the buttons could never be restyled - and on
-# macOS the Aqua theme ignores Button bg outright, so the state was invisible.
-import platform
+# ================================================================ appearance
 IS_MAC = platform.system() == 'Darwin'
-
-# ---- palette (muted, coherent; button colours still encode state) ----------
-COL_OK      = '#4c956c'   # go / loaded / ready        (muted green)
-COL_WARN    = '#e8a44c'   # needs attention / unsaved  (amber)
-COL_STOP    = '#c44536'   # running / kill             (brick red)
-COL_IDLE    = '#9aa0a6'   # disabled / not-ready       (grey)
-COL_DIRTY   = '#f2cc55'   # a field just changed       (soft yellow)
-COL_ACCENT  = '#2f3e46'   # headers / selected tab text
-COL_MUTE    = '#8a9199'   # secondary text
-# Backgrounds: the rigs run light mode, so give them an intentional off-white
-# card-on-canvas look. On macOS leave them as None so the app follows the
-# system theme instead of clashing with a dark title bar.
-if IS_MAC:
-    CANVAS = None         # window / tab strip
-    CARD   = None         # the content panel
-else:
-    CANVAS = '#eef1f4'    # soft cool grey
-    CARD   = '#ffffff'    # white card the fields sit on
-FONT_UI     = ('Segoe UI', 12)
-FONT_LABEL  = ('Segoe UI', 12)
-FONT_BTN    = ('Segoe UI', 12, 'bold')
-FONT_TAB    = ('Segoe UI', 11)
-FONT_RIG    = ('Segoe UI', 12, 'bold')
+COL_OK = '#4c956c'          # buttons: go / loaded / ready
+COL_WARN = '#e8a44c'        # buttons: needs attention
+COL_STOP = '#c44536'        # buttons: running / stop
+COL_IDLE = '#9aa0a6'        # buttons: not ready
+COL_ACCENT = '#2f3e46'      # labels and field text
+COL_MUTE = '#8a9199'        # secondary text
+COL_CHANGED_TEXT = '#b35c00'
+COL_RIG_OK = '#2e7d32'
+COL_RIG_BAD = '#c62828'
+FIELD_BLANK = '#f4f6f7'     # fields: not set yet
+FIELD_ROW = '#f2cc55'       # fields: loaded from the mouse's own row (yellow)
+FIELD_PRESET = '#a9cce3'    # fields: loaded from the mouse's preset (blue)
+FIELD_CHANGED = '#f4a582'   # fields: changed in the panel after loading (orange)
+# The rigs run Windows in light mode: an off-white canvas with white cards. On macOS the
+# backgrounds are left to the system theme so they follow dark mode.
+CANVAS = None if IS_MAC else '#eef1f4'
+CARD = None if IS_MAC else '#ffffff'
+FONT_UI = ('Segoe UI', 12)
+FONT_BTN = ('Segoe UI', 12, 'bold')
+FONT_TAB = ('Segoe UI', 11)
+FONT_SMALL = ('Segoe UI', 11)
 
 
+def bg(colour):
+    """Background option for a frame or label; empty on macOS so the system theme applies."""
+    return {'bg': colour} if colour else {}
+
+
+def shade(hex_colour, factor=0.88):
+    """A darker #rrggbb, for the pressed state."""
+    r, g, b = (int(hex_colour[i:i + 2], 16) for i in (1, 3, 5))
+    return '#%02x%02x%02x' % (int(r * factor), int(g * factor), int(b * factor))
+
+
+def paint_button(button, colour):
+    """Button colours show state. macOS (Aqua) ignores a button's bg; highlightbackground tints it."""
+    if IS_MAC:
+        button.config(highlightbackground=colour, activebackground=colour, fg='#ffffff')
+    else:
+        button.config(bg=colour, activebackground=shade(colour), fg='#ffffff',
+                      disabledforeground='#eef1f4')
+
+
+def paint_field(dropdown, colour):
+    """Field colours show where a value came from; the text stays dark so it stays readable."""
+    if IS_MAC:
+        dropdown.config(highlightbackground=colour)
+    else:
+        dropdown.config(bg=colour, activebackground=shade(colour),
+                        fg=COL_ACCENT, activeforeground=COL_ACCENT)
+
+
+def warn(message):
+    messagebox.showwarning('Warning', message)
+
+
+# ================================================================ state
+@dataclass
 class State:
-    loaded  = False   # params have been Loaded or Overwritten at least once
-    dirty   = False   # a widget changed since then: the CSV no longer matches
-    running   = False   # Bonsai is up
-    camera_on = False
-    flush_on  = False
-    ended_at  = None    # time.time() when End_Protocol was last sent
+    saved: dict = None           # the values last written to Subject_Params.csv (Load or Overwrite)
+    mouse: object = None         # params_io.Mouse from the last Load, to show and confirm hand changes
+    running: bool = False        # a session is running (End Session not pressed yet)
+    ended_at: float = None       # time.time() when End_Protocol went out; None once Bonsai is closed
+    closing: bool = False        # Kill Bonsai is waiting for the data files to close
+    camera_on: bool = False
+    flush_on: bool = False
+
 
 S = State()
+process = None   # the Bonsai this panel started last (session, Camera or Flush Rig)
+RIG = None       # this PC's Rigs.csv row, set at start-up; None if the PC is not a registered rig
 
 
-def _shade(hex_colour, factor=0.88):
-    """Darken a #rrggbb colour for the active/pressed state."""
+# ================================================================ parameters
+def current_values():
+    """{xlsx column: text} as the fields show them now."""
+    return {col: WIDGETS[key].var.get() for key, col, _, _, _ in SPEC}
+
+
+def hand_changes(values):
+    """Fields changed in the panel since Load: [(label, loaded text, current text, where it came from)]."""
+    if S.mouse is None:
+        return []
+    changes = []
+    for _, col, label, _, _ in SPEC:
+        before, now = S.mouse.values[col], values[col]
+        if now != before:
+            source = f'preset {S.mouse.preset}' if col in S.mouse.from_preset else 'own row'
+            changes.append((label, before, now, source))
+    return changes
+
+
+def preset_label_warning(values):
+    """A paragraph for the Overwrite question when Session Type still names the loaded preset but a
+    value that preset sets has been changed, so the data would carry a preset name that no longer
+    describes the session. Empty otherwise."""
+    m = S.mouse
+    if m is None or m.preset == params_io.CUSTOM or values['Session_Type'] != m.preset:
+        return ''
+    differ = [label for _, col, label, _, _ in SPEC
+              if col in m.from_preset and col != 'Session_Type' and values[col] != m.values[col]]
+    if not differ:
+        return ''
+    return (f"Session Type still says '{m.preset}', but this session no longer matches that preset "
+            f"({', '.join(differ)}). The data will be labelled '{m.preset}'; change Session Type "
+            'if it should say something else.\n\n')
+
+
+def repaint_fields():
+    """Blue: from the preset. Yellow: from the mouse's row. Orange: changed here since Load."""
+    values = current_values()
+    for key, col, _, _, _ in SPEC:
+        value = values[col]
+        if value == SELECT:
+            colour = FIELD_BLANK
+        elif S.mouse is None or value != S.mouse.values[col]:
+            colour = FIELD_CHANGED
+        elif col in S.mouse.from_preset:
+            colour = FIELD_PRESET
+        else:
+            colour = FIELD_ROW
+        paint_field(WIDGETS[key].dropdown, colour)
+
+
+def on_field_changed():
+    repaint_fields()
+    refresh()
+
+
+def load_params():
+    subject = WIDGETS['Animal_ID'].var.get()
+    if subject == SELECT:
+        warn('Select a subject')
+        return
     try:
-        r = int(hex_colour[1:3], 16); g = int(hex_colour[3:5], 16); b = int(hex_colour[5:7], 16)
-        return '#%02x%02x%02x' % (int(r*factor), int(g*factor), int(b*factor))
-    except Exception:
-        return hex_colour
-
-def _paint(btn, colour):
-    """macOS Aqua ignores Button bg; highlightbackground is the one that tints."""
-    if IS_MAC:
-        btn.config(highlightbackground=colour, activebackground=colour, fg='#ffffff')
-    else:
-        btn.config(bg=colour, activebackground=_shade(colour), fg='#ffffff',
-                   disabledforeground='#eef1f4')
-
-
-def refresh_buttons():
-    """Single place where state -> appearance. Nothing else touches colours."""
-    if S.running:
-        _paint(run_protocol_button, COL_STOP)
-        run_protocol_button.config(text='End Session')
-        load_button.config(state='disabled')
-        overwrite_button.config(state='disabled')
-    else:
-        run_protocol_button.config(text='Launch Bonsai', state='active')
-        load_button.config(state='active')
-        overwrite_button.config(state='active')
-        ready = S.loaded and not S.dirty
-        _paint(run_protocol_button, COL_OK if ready else COL_IDLE)
-
-    _paint(load_button,      COL_OK if S.loaded else COL_WARN)
-    _paint(overwrite_button, COL_WARN if (S.dirty or not S.loaded) else COL_OK)
-
-    status_label.config(
-        text = 'Bonsai running'                    if S.running   else
-               'Unsaved changes - press Overwrite' if S.dirty     else
-               'Ready to launch'                   if S.loaded    else
-               'Load or Overwrite params to begin')
-
-
-def mark_dirty(*args):
-    S.dirty = True
-    refresh_buttons()
-
-
-def get_params():
-    """View over SPEC + WIDGETS.
-    (key written to Subject_Params.csv, tk variable, xlsx column, widget, cast)"""
-    return [(key, WIDGETS[key][0], col, WIDGETS[key][2], cast)
-            for key, col, _, _, cast, _ in SPEC]
-
-def overwrite_csv():
-    # Collect input values from user interface components
-    rows = get_params()
-    params = [var.get() for _, var, _, _, _ in rows]
-
-    # Check if any input values are "Select"
-    if "Select" in params:
-        messagebox.showwarning("Warning", "All params must be filled in")
+        mouse = params_io.load_mouse(MOUSE_PARAMS_XLSX, PRESETS_CSV, subject)
+    except params_io.SpreadsheetError as e:
+        warn(str(e))
+        return
+    if mouse.problems:
+        warn('Not loaded - fix the spreadsheet:\n' + '\n'.join(mouse.problems))
         return
 
-    pairs = [(key, value) for (key, _, _, _, _), value in zip(rows, params)]
-    problems = params_io.check_pairs(pairs, params_io.BOOL_KEYS)
+    params_io.write_subject_params(SUBJECT_PARAMS_CSV, mouse.pairs())
+    for key, col, _, _, _ in SPEC:
+        WIDGETS[key].var.set(mouse.values[col])    # exactly the text just written
+    S.mouse, S.saved = mouse, dict(mouse.values)
+    repaint_fields()
+    refresh()
+    if mouse.preset == params_io.CUSTOM:
+        source = 'All values are from its row in the spreadsheet (custom).'
+    else:
+        source = (f"{len(mouse.from_preset)} values are from preset '{mouse.preset}' (blue), "
+                  'the rest from its row in the spreadsheet (yellow).')
+        if mouse.overridden:
+            hidden = [f'  {col}: {own}   (preset: {used})' for col, own, used in mouse.overridden[:10]]
+            if len(mouse.overridden) > 10:
+                hidden.append(f'  ... and {len(mouse.overridden) - 10} more')
+            source += (f"\n\nNot used from {mouse.subject}'s row, because preset '{mouse.preset}' "
+                       'sets them:\n' + '\n'.join(hidden))
+    messagebox.showinfo('Success', f'Params successfully loaded\n\n{source}')
+
+
+def overwrite_params():
+    values = current_values()
+    if SELECT in values.values():
+        warn('All params must be filled in')
+        return
+    if S.mouse is not None and values['Subject'] != S.mouse.subject:
+        warn(f"Subject was changed after loading {S.mouse.subject}.\n"
+             f"Press Load params to load {values['Subject']}'s settings.")
+        return
+    problems = params_io.check_values(values)
     if problems:
-        messagebox.showwarning("Warning", "Not saved:\n" + "\n".join(problems))
+        warn('Not saved:\n' + '\n'.join(problems))
         return
-
-    params_io.write_subject_params(subject_params_file, pairs)
-
-    # Display success message and change button colors 
-    S.loaded = True
-    S.dirty  = False
-    refresh_buttons()
-    messagebox.showinfo("Success", "Overwrite successful")
-    
-def load_csv():
-    subj = WIDGETS['Animal_ID'][0].get()
-    if subj == 'Select':
-        tk.messagebox.showwarning("Warning", "Select a subject")
-        return
-    
-    df = pd.read_excel(mouse_room_params_path, sheet_name = 'Params', converters={'opto_on': str})
-    
-
-    if subj in df['Subject'].unique():
-        subj_params = df[df['Subject'] == subj]
-        rows = get_params()
-        params = [col for _, _, col, _, _ in rows[1:]]
-        missing = [col for col in params if col not in df.columns]
-        if missing:
-            tk.messagebox.showwarning("Warning", "Spreadsheet is missing columns:\n" + "\n".join(missing))
-            return
-        vars_and_dropdowns = zip(params,
-                                 [var  for _, var, _, _, _  in rows[1:]],
-                                 [dd   for _, _, _, dd, _   in rows[1:]],
-                                 [cast for _, _, _, _, cast in rows[1:]])
-
-        pairs = params_io.subject_pairs_from_row(subj_params.iloc[0])
-        problems = params_io.check_pairs(pairs, params_io.BOOL_KEYS)
-        if problems:
-            tk.messagebox.showwarning("Warning", "Not loaded - fix the spreadsheet row:\n" + "\n".join(problems))
+    changes = hand_changes(values)
+    if changes:
+        listing = '\n'.join(f'{label}: {before} -> {now}   ({source})'
+                            for label, before, now, source in changes)
+        if not messagebox.askyesno('Save changes for this session?',
+                                   f'These differ from what was loaded:\n\n{listing}\n\n'
+                                   f'{preset_label_warning(values)}'
+                                   'They apply to this session only; the spreadsheet is not changed.'):
             return
 
-        params_io.write_subject_params(subject_params_file, pairs)
+    params_io.write_subject_params(SUBJECT_PARAMS_CSV, params_io.pairs_from_values(values))
+    S.saved = values
+    refresh()
+    messagebox.showinfo('Success', 'Overwrite successful')
 
-        for param, var, dropdown, cast in vars_and_dropdowns:
-            value = subj_params[param].values[0]
-            if cast is not None:
-                try:
-                    value = cast(value)
-                except Exception:
-                    pass
-            var.set(value)
-            _paint(dropdown, COL_DIRTY)
 
-        S.loaded = True
-        S.dirty  = False
-        refresh_buttons()
-        tk.messagebox.showinfo("Success", "Params successfully loaded")
-    else:
-        tk.messagebox.showwarning("Warning", "No params available for this subject")
-        return
-    
-def launch_bonsai():
+# ================================================================ Bonsai
+def bonsai_running():
+    """True if any Bonsai is open on this PC, whoever started it."""
+    return any((p.info['name'] or '').lower() == 'bonsai.exe'
+               for p in psutil.process_iter(['name']))
+
+
+def refuse_if_bonsai_open():
+    """Refuse (with a warning) while anything Bonsai is open: by the panel's own state, and by
+    process name in case Bonsai was started some other way."""
+    if S.ended_at is not None or S.camera_on or S.flush_on or bonsai_running():
+        warn('Bonsai is already open (a session, Camera, Flush Rig or the editor).\n'
+             'Press Kill Bonsai first.')
+        return True
+    return False
+
+
+def start_bonsai(workflow, start=True):
+    """Start Bonsai on a workflow in BONSAI_CWD. Returns the process, or None after a warning."""
+    if not workflow.exists():
+        warn(f'{workflow.name} not found at {workflow}')
+        return None
+    if not BONSAI_EXE.exists():
+        warn(f'Bonsai.exe not found at {BONSAI_EXE}')
+        return None
+    return subprocess.Popen([str(BONSAI_EXE), str(workflow)] + (['--start'] if start else []),
+                            cwd=BONSAI_CWD)
+
+
+def launch_or_end():
+    """The Launch Bonsai button, which reads End Session while a session runs."""
     global process
     if S.running:
-        send_end_protocol()
-        S.running = False
-        refresh_buttons()
+        end_session()
         return
-
-    if not S.loaded:
-        tk.messagebox.showwarning("Warning", "Protocol can't launch without params!")
+    if RIG is None:
+        warn('This PC is not registered as a rig, so it cannot run a session '
+             '(see the red line at the bottom).')
         return
-    if S.dirty:
-        tk.messagebox.showwarning("Warning",
-                                  "Params changed since last save - press Overwrite first")
+    if S.saved is None:
+        warn("Protocol can't launch without params!")
         return
-
-    file_path = protocols_path + 'Auditory_discrimination/Sound_Cat_V2.bonsai'
-    if not os.path.exists(file_path):
-        tk.messagebox.showwarning("Warning", "Protocol not found on current machine")
+    if current_values() != S.saved:
+        warn('Params changed since last save - press Overwrite first')
         return
-    if not os.path.exists(bonsai_path):
-        tk.messagebox.showwarning("Warning", "Bonsai.exe not found at " + bonsai_path)
+    if refuse_if_bonsai_open():
         return
+    started = start_bonsai(WORKFLOW)
+    if started is None:
+        return
+    process = started
+    S.running, S.ended_at = True, None
+    refresh()
 
-    process = subprocess.Popen([bonsai_path, file_path, '--start'], cwd=gui_dir)
-    S.running = True
-    refresh_buttons()
 
-
-CLOSE_FILES_WAIT_S = 4   # the workflow closes its CSVs 2 s after End_Protocol
-
-
-def send_end_protocol():
-    SimpleUDPClient("127.0.0.1", 1334).send_message("/GUI", "End_Protocol")
-    S.ended_at = time.time()
+def end_session():
+    SimpleUDPClient(*OSC_ADDRESS).send_message('/GUI', 'End_Protocol')
+    S.running, S.ended_at = False, time.time()
+    refresh()
 
 
 def kill_bonsai():
     """Stop Bonsai without losing the end of the data files.
 
-    Killing the process discards whatever the CsvWriters still hold in memory, so
-    if a session is running, End_Protocol goes out first and the kill waits until
-    the workflow has had time to close its files."""
+    Killing Bonsai discards whatever its CSV writers still hold in memory, so if a session is
+    running, End_Protocol goes out first and the kill waits until the workflow has closed its
+    files."""
     if S.running:
-        send_end_protocol()
-        S.running = False
-        refresh_buttons()
+        end_session()
     wait_s = 0 if S.ended_at is None else CLOSE_FILES_WAIT_S - (time.time() - S.ended_at)
     if wait_s > 0:
-        status_label.config(text='Closing data files...')
-        root.after(int(wait_s * 1000), _terminate_bonsai)
+        S.closing = True
+        refresh()
+        root.after(int(wait_s * 1000), terminate_bonsai)
     else:
-        _terminate_bonsai()
+        terminate_bonsai()
 
 
-def _terminate_bonsai():
-    """The original kill: only acts if this GUI launched something."""
-    if process is not None:
+def terminate_bonsai():
+    """Close every Bonsai on this PC: the session, Camera, Flush Rig and any editor."""
+    if process is not None and process.poll() is None:
         process.terminate()
-        process.wait()
-        for proc in psutil.process_iter(['pid', 'name']):
-            if proc.info['name'] == "Bonsai.exe":
-                proc.kill()
-    S.ended_at = None
-    refresh_buttons()
-                
-def camera():
+        try:
+            process.wait(timeout=10)
+        except subprocess.TimeoutExpired:
+            pass
+    for p in psutil.process_iter(['name']):
+        if (p.info['name'] or '').lower() == 'bonsai.exe':
+            try:
+                p.kill()
+            except psutil.Error:
+                pass
+    S.ended_at, S.closing, S.camera_on, S.flush_on = None, False, False, False
+    refresh()
+
+
+def toggle_camera():
     global process
     if S.camera_on:
-        _terminate_bonsai()
-        S.camera_on = False
-        _paint(camera_button, COL_OK)
+        terminate_bonsai()
         return
-    camera_path = repo_path + '/Params/Camera.bonsai'
-    if not os.path.exists(camera_path):
-        tk.messagebox.showwarning("Warning", "No camera protocol found on current machine")
+    if refuse_if_bonsai_open():
         return
-    process = subprocess.Popen([bonsai_path, camera_path, '--start'], cwd=gui_dir)
-    S.camera_on = True
-    _paint(camera_button, COL_STOP)
+    started = start_bonsai(CAMERA_WORKFLOW)
+    if started is not None:
+        process, S.camera_on = started, True
+        refresh()
 
-def open_in_editor():
-    """Open the workflow in the Bonsai editor with the SAME working directory a
-    real session uses. Opening Bonsai from the Start menu gives CWD =
-    AppData\\Local\\Bonsai, where neither ..\\Params\\ nor Extensions\\ resolves."""
-    file_path = protocols_path + 'Auditory_discrimination/Sound_Cat_V2.bonsai'
-    if not os.path.exists(file_path):
-        tk.messagebox.showwarning("Warning", "Protocol not found on current machine")
-        return
-    if not os.path.exists(bonsai_path):
-        tk.messagebox.showwarning("Warning", "Bonsai.exe not found at " + bonsai_path)
-        return
-    subprocess.Popen([bonsai_path, file_path], cwd=gui_dir)      # no --start
-    
-def flush_rig():
+
+def toggle_flush():
     global process
     if S.flush_on:
-        _terminate_bonsai()
-        S.flush_on = False
-        _paint(flush_rig_button, COL_OK)
+        terminate_bonsai()
         return
-    flush_rig_path = repo_path + '/Params/Flush_Rig.bonsai'
-    if not os.path.exists(flush_rig_path):
-        tk.messagebox.showwarning("Warning", "No flush rig protocol found on current machine")
+    if RIG is None:
+        warn('This PC is not registered as a rig, so Flush Rig does not know its ports.')
         return
-    process = subprocess.Popen([bonsai_path, flush_rig_path, '--start'], cwd=gui_dir)
-    S.flush_on = True
-    _paint(flush_rig_button, COL_STOP)
+    if refuse_if_bonsai_open():
+        return
+    started = start_bonsai(FLUSH_WORKFLOW)
+    if started is not None:
+        process, S.flush_on = started, True
+        refresh()
 
 
-def push_data():
-    experimenter_str = experimenter.get()
-    CONFIG_FILE = repo_path + "/GUI/paths/%s.json" % {'QP': 'quentin', 'SS': 'serkan'}.get(experimenter_str, '')
+def open_in_editor():
+    """Open the task workflow in the Bonsai editor, in the working directory a session uses.
+    (Started from the Start menu, Bonsai runs in AppData\\Local\\Bonsai, where neither
+    ..\\Params\\ nor Extensions\\ resolves.)"""
+    start_bonsai(WORKFLOW, start=False)
 
-    if experimenter_str not in ('QP', 'SS'):
-        tk.messagebox.showwarning("Warning", "Select an experimenter before pushing")
+
+# ================================================================ Push Data
+def push():
+    initials = experimenter.var.get()
+    config = EXPERIMENTERS.get(initials)
+    if config is None:
+        warn('Select an experimenter before pushing')
+        return
+    if S.running or bonsai_running():
+        warn('End the session and press Kill Bonsai before pushing, '
+             'so that no data file is still being written.')
+        return
+    if not DATA_DIR.is_dir():
+        messagebox.showinfo('Push Data', 'There is no Data folder on this PC yet.')
+        return
+    destination = push_data.find_server_folder(config['data_path'])
+    if destination is None:
+        warn('No server found on current machine')
         return
 
-    with open(CONFIG_FILE, "r") as f:
-        PATHS = json.load(f)
+    status_label.config(text='Copying data to the server...')
+    root.update_idletasks()
+    try:
+        report = push_data.copy_new_files(DATA_DIR, destination, prefix=initials)
+    except OSError as e:
+        messagebox.showerror('Push Data stopped',
+                             f'{e}\n\nEvery file copied before this point is complete. '
+                             'Press Push Data again to carry on.')
+    else:
+        show = messagebox.showwarning if report.different else messagebox.showinfo
+        show('Push Data', report.summary(destination))
+    finally:
+        refresh()
 
-    server_data_path = None
-    for drive in get_mapped_drives():
-        candidate = drive[0:2] + PATHS['data_path']
-        if os.path.exists(candidate):
-            server_data_path = candidate
-            break
 
-    if server_data_path is None:
-        tk.messagebox.showwarning("Warning", "No server found on current machine")
-        return
+# ================================================================ display
+def preset_line(values):
+    """The line under the rig: the loaded mouse's preset, and what was changed by hand."""
+    if S.mouse is None:
+        return {'text': '', 'fg': COL_MUTE}
+    m = S.mouse
+    if m.preset == params_io.CUSTOM:
+        text = f'{m.subject}: custom - every value from its spreadsheet row'
+    else:
+        text = f'{m.subject}: preset {m.preset} - {len(m.from_preset)} values from Presets.csv (blue)'
+    changed = [label for label, _, _, _ in hand_changes(values)]
+    if not changed:
+        return {'text': text, 'fg': COL_ACCENT}
+    shown = ', '.join(changed[:4]) + (f' and {len(changed) - 4} more' if len(changed) > 4 else '')
+    return {'text': f'{text}\nChanged for this session: {shown}', 'fg': COL_CHANGED_TEXT}
 
-    copy_all_contents(repo_path + '/Data', server_data_path, experimenter)      
-        
-def create_label_dropdown(parent_frame, label_text, option_list, y_pos):
-    var = tk.StringVar()
-    var.set("Select")
 
-    _lbl_bg = {'bg': CARD} if CARD else {}
-    label = tk.Label(parent_frame, text=label_text.replace('\n', ''), width=24,
-                     font=FONT_LABEL, fg=COL_ACCENT, anchor='e', justify='right', **_lbl_bg)
-    label.grid(row=y_pos, column=0, padx=(10, 14), pady=5, sticky='e')
+def refresh():
+    """The one place where state becomes button colours and status text."""
+    values = current_values()
+    saved = S.saved is not None
+    dirty = saved and values != S.saved
+    if S.running:
+        launch_button.config(text='End Session', state='normal')
+        paint_button(launch_button, COL_STOP)
+        load_button.config(state='disabled')
+        overwrite_button.config(state='disabled')
+    else:
+        launch_button.config(text='Launch Bonsai', state='normal' if RIG is not None else 'disabled')
+        paint_button(launch_button, COL_OK if RIG is not None and saved and not dirty else COL_IDLE)
+        load_button.config(state='normal')
+        overwrite_button.config(state='normal')
+    paint_button(load_button, COL_OK if saved else COL_WARN)
+    paint_button(overwrite_button, COL_WARN if dirty or not saved else COL_OK)
+    paint_button(camera_button, COL_STOP if S.camera_on else COL_OK)
+    paint_button(flush_button, COL_STOP if S.flush_on else COL_OK)
+    status_label.config(text='Closing data files...' if S.closing else
+                        'Bonsai running' if S.running else
+                        'Session ended - press Kill Bonsai' if S.ended_at is not None else
+                        'Unsaved changes - press Overwrite' if dirty else
+                        'Ready to launch' if saved else
+                        'Load or Overwrite params to begin')
+    preset_label.config(**preset_line(values))
 
-    dropdown = tk.OptionMenu(parent_frame, var, *option_list,
-                             command=lambda x: (_paint(dropdown, COL_DIRTY), mark_dirty()))
-    dropdown.grid(row=y_pos, column=1, padx=10, pady=5, sticky='w')
+
+# ================================================================ window
+Field = namedtuple('Field', 'var label dropdown')
+
+
+def make_field(parent, label, options, row):
+    var = tk.StringVar(value=SELECT)
+    text = tk.Label(parent, text=label + ':', width=24, font=FONT_UI, fg=COL_ACCENT,
+                    anchor='e', justify='right', **bg(CARD))
+    text.grid(row=row, column=0, padx=(10, 14), pady=5, sticky='e')
+    dropdown = tk.OptionMenu(parent, var, *(options or [SELECT]),
+                             command=lambda _choice: on_field_changed())
     dropdown.config(height=1, width=16, font=FONT_UI, relief='flat',
-                    bg='#f4f6f7', activebackground='#e4e7ea',
-                    highlightthickness=1, highlightbackground='#c8ccd0',
-                    borderwidth=0)
+                    highlightthickness=1, highlightbackground='#c8ccd0', borderwidth=0)
+    paint_field(dropdown, FIELD_BLANK)
+    dropdown.grid(row=row, column=1, padx=10, pady=5, sticky='w')
+    return Field(var, text, dropdown)
 
-    return var, label, dropdown
 
+def make_button(parent, text, command=None, width=12, padx=8):
+    return tk.Button(parent, text=text, command=command, width=width, font=FONT_BTN,
+                     relief='flat', borderwidth=0, padx=padx, pady=6)
 
-# %%
-# GUI CODE
-
-# ---- window ---------------------------------------------------------------
-# No hardcoded background colours. tk resolves the defaults to the system
-# window colour, which follows light/dark mode on macOS and matches the shell
-# on Windows. Hardcoding a light palette breaks dark mode; hardcoding a dark
-# one breaks the rigs.
-#
-# Button colours ARE hardcoded and must stay: launch_bonsai reads
-# run_protocol_button['bg'] to decide what to do, so 'orange' / 'green' /
-# 'crimson' are program state, not styling. NB on macOS the Aqua theme ignores
-# Button bg entirely, so they render grey there. The logic still works - you
-# just can't see the state. On Windows they colour normally.
 
 root = tk.Tk()
-root.title("Bonsai Launcher GUI")
-if CANVAS: root.config(bg=CANVAS)
-root.geometry("880x720")
-root.minsize(860, 620)
+root.title('Bonsai Launcher GUI')
+root.config(**bg(CANVAS))
+root.geometry('880x740')
+root.minsize(860, 640)
 
-# The action bar packs FIRST, anchored bottom, so it reserves its strip before
-# the notebook expands. No fill='x' - a shrink-to-fit frame is centred by pack.
-action_frame = tk.Frame(root, bg=CANVAS) if CANVAS else tk.Frame(root)
+# The action bar packs first, at the bottom, so it keeps its strip when the notebook expands.
+action_frame = tk.Frame(root, **bg(CANVAS))
 action_frame.pack(side='bottom', pady=10)
-
 notebook = ttk.Notebook(root)
 notebook.pack(side='top', pady=10, padx=10, fill='both', expand=True)
 
 style = ttk.Style()
 try:
     style.theme_use('clam')
-except Exception:
+except tk.TclError:
     pass
-
-_canvas = CANVAS or '#eef1f4'
-_card   = CARD   or '#ffffff'
-style.configure('TNotebook', background=_canvas, borderwidth=0, tabmargins=[10, 8, 10, 0])
+style.configure('TNotebook', background=CANVAS or '#eef1f4', borderwidth=0, tabmargins=[10, 8, 10, 0])
 style.configure('TNotebook.Tab', font=FONT_TAB, padding=[16, 8], borderwidth=0,
                 background='#dfe3e8', foreground=COL_MUTE)
-style.map('TNotebook.Tab',
-          background=[('selected', _card)],
-          foreground=[('selected', COL_ACCENT)],
-          expand=[('selected', [0, 0, 0, 0])])
-# soft rounded-ish frame around content (clam draws a thin flat border, not a bevel)
-style.configure('Card.TFrame', background=_card)
-my_font = font.Font(family='Segoe UI', size=12)
+style.map('TNotebook.Tab', background=[('selected', CARD or '#ffffff')],
+          foreground=[('selected', COL_ACCENT)], expand=[('selected', [0, 0, 0, 0])])
 
-# Subject list comes from the spreadsheet; SPEC references it, so it must exist first.
-mouse_room_params_df = pd.read_excel(mouse_room_params_path, sheet_name='Params')
-subject_option_list  = mouse_room_params_df.Subject.unique().tolist()
+# The subject list comes from the spreadsheet. If it cannot be read, the panel still opens,
+# so Kill Bonsai and Push Data keep working.
+try:
+    SUBJECT_LIST = params_io.subjects(params_io.read_mice(MOUSE_PARAMS_XLSX))
+except params_io.SpreadsheetError as e:
+    SUBJECT_LIST = []
+    messagebox.showerror('Spreadsheet not readable', str(e))
+SPEC = params_io.build_spec(SUBJECT_LIST)
+EXPERIMENTERS = push_data.load_experimenters(EXPERIMENTERS_DIR)
 
-# SPEC (the single source of truth for keys, xlsx columns, options and tabs)
-# lives in params_io so it can be tested without opening the window.
-TABS = params_io.TABS
-SPEC = params_io.build_spec(subject_option_list)
-
-
-# %%
-# BUILD THE TABS
-
-tabs   = {}
 frames = {}
-for t in TABS:
-    tabs[t] = tk.Frame(notebook, bg=CARD) if CARD else tk.Frame(notebook)
-    notebook.add(tabs[t], text=t)
-    frames[t] = tk.Frame(tabs[t], bg=CARD) if CARD else tk.Frame(tabs[t])
-    frames[t].pack(pady=(24, 0), anchor='n')
-
-setup_frame = frames['Setup']
+for tab in params_io.TABS:
+    page = tk.Frame(notebook, **bg(CARD))
+    notebook.add(page, text=tab)
+    frames[tab] = tk.Frame(page, **bg(CARD))
+    frames[tab].pack(pady=(24, 0), anchor='n')
 
 WIDGETS = {}
-for t in TABS:
-    for i, (key, col, label, options, cast, tab) in enumerate([s for s in SPEC if s[5] == t]):
-        WIDGETS[key] = create_label_dropdown(frames[t], label, options, y_pos=i)
+for tab in params_io.TABS:
+    for row, (key, _, label, options, _) in enumerate(s for s in SPEC if s[4] == tab):
+        WIDGETS[key] = make_field(frames[tab], label, params_io.option_texts(key, options), row)
 
-# %%
-# SETUP TAB
+# ---- Setup tab
+setup = frames['Setup']
+experimenter = make_field(setup, 'Experimenter', sorted(EXPERIMENTERS), 0)
+flush_button = make_button(setup, 'Flush Rig', toggle_flush)
+flush_button.grid(row=1, column=0, padx=10, pady=10, sticky='w')
+camera_button = make_button(setup, 'Camera', toggle_camera)
+camera_button.grid(row=2, column=0, padx=10, pady=10, sticky='w')
+test_speakers_button = make_button(setup, 'Test Speakers', width=15)    # not implemented
+test_speakers_button.config(state='disabled')
+test_speakers_button.grid(row=1, column=1, padx=10, pady=10, sticky='w')
+calibrate_button = make_button(setup, 'Calibrate', width=15)            # not implemented
+calibrate_button.config(state='disabled')
+calibrate_button.grid(row=2, column=1, padx=10, pady=10, sticky='w')
+push_button = make_button(setup, 'Push Data', push)
+push_button.grid(row=3, column=0, padx=10, pady=10, sticky='w')
+edit_button = make_button(setup, 'Edit Workflow', open_in_editor)
+edit_button.grid(row=3, column=1, padx=10, pady=10, sticky='w')
 
-experimenter, experimenter_label, experimenter_dropdown = create_label_dropdown(
-    parent_frame=setup_frame, label_text="Experimenter:",
-    option_list=['SS', 'QP'], y_pos=0)
-
-flush_rig_button = tk.Button(setup_frame, font=FONT_BTN, relief='flat', borderwidth=0, padx=8, pady=6,
-                             text="Flush Rig", width=12, command=flush_rig)
-flush_rig_button.grid(row=1, column=0, padx=10, pady=10, sticky="w")
-
-camera_button = tk.Button(setup_frame, font=FONT_BTN, relief='flat', borderwidth=0, padx=8, pady=6,
-                          text="Camera", width=12, command=camera)
-camera_button.grid(row=2, column=0, padx=10, pady=10, sticky="w")
-
-test_speakers_button = tk.Button(setup_frame, font=FONT_BTN, relief='flat', borderwidth=0, padx=8, pady=6, text="Test Speakers", state='disabled', width=15)
-test_speakers_button.grid(row=1, column=1, padx=10, pady=10, sticky="w")
-
-calibrate_button = tk.Button(setup_frame, font=FONT_BTN, relief='flat', borderwidth=0, padx=8, pady=6, text="Calibrate", state='disabled', width=15)
-calibrate_button.grid(row=2, column=1, padx=10, pady=10, sticky="w")
-
-push_data_button = tk.Button(setup_frame, font=FONT_BTN, relief='flat', borderwidth=0, padx=8, pady=6,
-                             text="Push Data", width=12, command=push_data)
-push_data_button.grid(row=3, column=0, padx=10, pady=10, sticky="w")
-
-edit_workflow_button = tk.Button(setup_frame, font=FONT_BTN, relief='flat', borderwidth=0,
-                                 padx=8, pady=6, text="Edit Workflow", width=12,
-                                 command=open_in_editor)
-edit_workflow_button.grid(row=3, column=1, padx=10, pady=10, sticky="w")
-
-# %%
-# ACTION BUTTONS - below the notebook, so they are visible from every tab
-
-load_button = tk.Button(action_frame, font=FONT_BTN, relief='flat', borderwidth=0, padx=10, pady=6, text="Load params", command=load_csv, width=14)
+# ---- action bar, visible from every tab
+load_button = make_button(action_frame, 'Load params', load_params, width=14, padx=10)
 load_button.grid(row=0, column=0, padx=10, pady=5)
-
-overwrite_button = tk.Button(action_frame, font=FONT_BTN, relief='flat', borderwidth=0, padx=10, pady=6, text="Overwrite params", command=overwrite_csv, width=14)
+overwrite_button = make_button(action_frame, 'Overwrite params', overwrite_params, width=14, padx=10)
 overwrite_button.grid(row=1, column=0, padx=10, pady=5)
-
-run_protocol_button = tk.Button(action_frame, font=FONT_BTN, relief='flat', borderwidth=0, padx=10, pady=6, text="Launch Bonsai", state='active',
-                                command=launch_bonsai, width=12)
-run_protocol_button.grid(row=0, column=1, padx=10, pady=5)
-
-kill_bonsai_button = tk.Button(action_frame, font=FONT_BTN, relief='flat', borderwidth=0, padx=10, pady=6, text="Kill Bonsai", state='active',
-                               command=kill_bonsai, width=12)
-kill_bonsai_button.grid(row=1, column=1, padx=10, pady=5)
-
-rig_label = tk.Label(action_frame, text='', font=FONT_RIG, **({'bg':CANVAS} if CANVAS else {}))
+launch_button = make_button(action_frame, 'Launch Bonsai', launch_or_end, padx=10)
+launch_button.grid(row=0, column=1, padx=10, pady=5)
+kill_button = make_button(action_frame, 'Kill Bonsai', kill_bonsai, padx=10)
+kill_button.grid(row=1, column=1, padx=10, pady=5)
+rig_label = tk.Label(action_frame, text='', font=FONT_BTN, **bg(CANVAS))
 rig_label.grid(row=2, column=0, columnspan=2, pady=(8, 0))
+preset_label = tk.Label(action_frame, text='', font=FONT_SMALL, wraplength=820, justify='center', **bg(CANVAS))
+preset_label.grid(row=3, column=0, columnspan=2, pady=(2, 0))
+status_label = tk.Label(action_frame, text='', font=FONT_SMALL, fg=COL_MUTE, **bg(CANVAS))
+status_label.grid(row=4, column=0, columnspan=2, pady=(2, 0))
 
-status_label = tk.Label(action_frame, text='', font=('Segoe UI', 11), fg=COL_MUTE, **({'bg':CANVAS} if CANVAS else {}))
-status_label.grid(row=3, column=0, columnspan=2, pady=(2, 0))
+paint_button(push_button, COL_OK)
+paint_button(kill_button, COL_STOP)
+paint_button(edit_button, COL_ACCENT)
 
-_paint(flush_rig_button, COL_OK)
-_paint(camera_button,    COL_OK)
-_paint(push_data_button, COL_OK)
-_paint(kill_bonsai_button, COL_STOP)
-_paint(edit_workflow_button, COL_ACCENT)
-
-# Resolve which rig this machine is BEFORE anything can launch. On failure, disable
-# launch entirely and put the reason in the status line - the rig must be known.
+# ================================================================ start-up
+# Find out which rig this PC is before anything can launch. If that fails, Launch stays disabled
+# and Rig_Params.csv is deleted, so neither a session nor Flush Rig can run on a stale file
+# (on a cloned disk it would hold the other rig's ports and valve times).
 try:
-    RIG = resolve_rig()
-    rig_label.config(text="Rig %s   (%s)" % (RIG['rig'], RIG['Hostname']), fg="#2e7d32")
-except Exception as e:
+    RIG, rig_pairs = params_io.resolve_rig(RIG_JSON, RIGS_CSV, socket.gethostname())
+    params_io.write_rig_params(RIG_PARAMS_CSV, rig_pairs)
+    rig_label.config(text=f"Rig {RIG['rig']}   ({RIG['Hostname']})", fg=COL_RIG_OK)
+except (params_io.RigError, OSError) as e:
     RIG = None
-    run_protocol_button.config(state='disabled')
-    _paint(run_protocol_button, COL_IDLE)
-    tk.messagebox.showerror("Rig not configured", str(e))
-    rig_label.config(text="RIG NOT CONFIGURED - launch disabled", fg="#c62828")
+    try:
+        RIG_PARAMS_CSV.unlink(missing_ok=True)
+    except OSError:
+        pass
+    rig_label.config(text='RIG NOT CONFIGURED - launch disabled', fg=COL_RIG_BAD)
+    messagebox.showerror('Rig not configured', str(e))
 
-refresh_buttons()
+refresh()
 root.mainloop()

@@ -12,7 +12,7 @@ This is lab instrumentation. It drives specific hardware on specific Windows PCs
 
 ## How a session runs
 
-1. The control panel (`GUI/Bonsai_GUI.py`) reads the chosen mouse's row from `Params/Mouse_Room_Params.xlsx`. It also reads this PC's row from `Params/Rigs.csv` and writes both as one-line files, `Params/Subject_Params.csv` and `Params/Rig_Params.csv`.
+1. The control panel (`GUI/Bonsai_GUI.py`) reads the chosen mouse's row from `Params/Mouse_Room_Params.xlsx`. If the row's Preset is not `custom`, the values its preset sets come from `Params/Presets.csv` instead (see [PARAMETERS.md](PARAMETERS.md#presets)). It also reads this PC's row from `Params/Rigs.csv` and writes both as one-line files, `Params/Subject_Params.csv` and `Params/Rig_Params.csv`.
 2. **Launch Bonsai** starts Bonsai on `Protocols/Auditory_discrimination/Sound_Cat_V2.bonsai`, with `GUI/` as the working folder. All relative paths in the workflow (`..\Params\…`, `Extensions\…`, `../Data`) are relative to `GUI/`.
 3. The workflow reads the two files, connects to the hardware, and runs trials until you press **End Session**. It writes six CSV files (plus camera video) to `Data/<subject>/<protocol>_<subject>_<date>/`.
 4. **End Session** stops the trials, closes the valves and Zapit, and closes the data files about 2 s later. **Kill Bonsai** then closes Bonsai.
@@ -37,13 +37,15 @@ If Early Lick Abort is on, a new lick during the sound or the delay ends the tri
 GUI/
   Launch_Bonsai_GUI.bat   start here on a rig: activates gui_env, syncs the code, opens the panel
   Bonsai_GUI.py           the control panel (tkinter)
-  params_io.py            the parameter table (SPEC) and the code that writes the parameter files
+  params_io.py            the parameter table (SPEC), presets, rig identity, and the code that writes the parameter files
+  push_data.py            Push Data: copies new session files to the server
   GUI_env.yml             conda environment "gui_env" (mac_env.yml: macOS, cannot run a rig)
   Extensions/             Bonsai include files and zapit_TCPclient.cs, as used by the running workflow
   Extensions.csproj       needed for Bonsai to compile zapit_TCPclient.cs - do not delete
-  paths/<name>.json       per-experimenter server paths used by Push Data
+  paths/<name>.json       one per experimenter: initials and server folder, used by Push Data
 Params/
-  Mouse_Room_Params.xlsx  one row per mouse (sheet "Params")
+  Mouse_Room_Params.xlsx  one row per mouse (sheet "Params"); its Preset column says custom or names a preset
+  Presets.csv             one column per preset, holding the values that preset sets
   Rigs.csv                one row per rig PC: ports, valve times, speaker calibration
   Camera.bonsai, Flush_Rig.bonsai   utility workflows behind the Camera and Flush Rig buttons
   Subject_Params.csv, Rig_Params.csv   written by the panel; not in git
@@ -52,7 +54,10 @@ Protocols/
   Auditory_discrimination/Sound_Cat_V2.bonsai.layout   its window layout - keep it next to the workflow
   Arduino/                firmware for the Arduino lick/valve board
   …                       other task families, calibration workflows and sound files
-tests/test_rig_consistency.py   checks the GUI, parameter files and workflow agree
+tests/
+  test_rig_consistency.py the panel, the parameter files and the workflow agree
+  test_params.py          presets, value checks, Rigs.csv, rig identity, Push Data
+  test_docs.py            PARAMETERS.md matches the code
 Data/                     session data, written by Bonsai; not in git
 ```
 
@@ -79,6 +84,8 @@ Data/                     session data, written by Bonsai; not in git
    - On the PC, create `C:\ProgramData\MouseRoom\rig.json` containing `{"rig": "<id>"}`.
 5. **A desktop shortcut** to `GUI\Launch_Bonsai_GUI.bat`.
 6. **Check.** Start the panel; the bottom line should read `Rig <id>   (<computer name>)` in green.
+
+**Adding an experimenter.** Add `GUI/paths/<name>.json` with the initials and server folder, for example `{"initials": "AB", "data_path": "/Name/Head_Fixed_Behavior/Data"}`, then commit and push. The Experimenter list on the Setup tab is built from these files, and Push Data only copies subjects whose ID starts with the initials. (`params_path` in the existing files is not used.)
 
 ## Output files
 
@@ -145,6 +152,17 @@ Things to know when analysing it:
   - Each row is a command to Zapit or Zapit's reply.
   - The `Data` field is a tuple such as `(254, 0, 0, 0, 0, 0, 0)`. It contains commas and isn't quoted, so a normal CSV reader splits it. Read the file line by line instead.
 
+## Calibrating a rig
+
+Calibration results go into the rig's row of `Params/Rigs.csv`: `Left_Valve_Time` and `Right_Valve_Time` from water calibration, `Speaker_Slope` and `Speaker_Y_Intercept` from sound calibration.
+
+- Water: `Protocols/Water_calibration/Manual_Calibration_Arduino.bonsai` (Arduino rigs) or `Manual_Calibration_Harp.bonsai` (Harp rigs), with `Water_Calib_Plots.ipynb`.
+- Sound: `Protocols/Sound_Calibration/WN_Volume_Calibration.bonsai` and `Test_Volume_Cal.bonsai`, with `Vol_Calib_Plots.ipynb`.
+
+These workflows predate the current folder layout and the panel does not run them. Check their file paths and ports in the editor before using one: the sound workflows read `Rig_Params.csv` from `C:\Users\MouseRoom\Desktop\HeadFixedBehavior\Params\` or `C:\Users\Psychophysics\Desktop\HeadFixedBehavior\Params\`, `Manual_Calibration_Arduino.bonsai` reads `../../Params/Rig_Params.csv`, and `Manual_Calibration_Harp.bonsai` has `COM4` written in.
+
+The other task folders in `Protocols/` (`PWM_auditory`, `DMTS`, `Amplitude_Modulation`, and `Pro_Anti/Pro_Anti.bonsai`) are older standalone tasks. The panel does not run them, and they use paths from earlier layouts.
+
 ## Changing the code or the workflow
 
 - **Change things on a development machine, then commit and push.** Every rig resets its copy to `origin/main` each time the launcher starts, so changes made on a rig are lost. That includes the spreadsheet.
@@ -154,13 +172,13 @@ Things to know when analysing it:
   - If you replace the workflow file in some other way, replace the layout with its matching file, or the windows won't open.
   - Don't commit an empty `.bonsai/Settings/Sound_Cat_V2.layout`: Bonsai 2.8 and later would use it instead of the layout above.
 - **Keep `GUI/Extensions.csproj`.** Without it, Bonsai doesn't compile `GUI/Extensions/zapit_TCPclient.cs`. The workflow then fails with "proxy for the unknown type zapit_TCPclient" and won't start, even in emulator mode.
-- **Two `Extensions/` folders exist.** The running workflow uses `GUI/Extensions/`, because paths are relative to `GUI/`. `Protocols/Auditory_discrimination/Extensions/` is a copy; if you change one, change both.
-- **To add a parameter**, you need three things: a row in `SPEC` in `GUI/params_io.py`, a column in the spreadsheet, and a parser in the workflow's `Params` group. The tests fail until all three match.
+- **Two `Extensions/` folders exist.** The running workflow uses `GUI/Extensions/`, because paths are relative to `GUI/`. Change that one. `Protocols/Auditory_discrimination/Extensions/` is an older copy and already differs from it (`Send_Samples.bonsai`).
+- **To add a parameter**, you need four things: a row in `SPEC` in `GUI/params_io.py`, a column in the spreadsheet, a parser in the workflow's `Params` group, and a row in `PARAMETERS.md`. The tests fail until all four match. If a preset should set it, add a row to `Params/Presets.csv` as well.
 - **Run the tests before pushing.**
 
 ## Tests
 
-From the repository root, in any environment with pandas, numpy, openpyxl and pytest (gui_env doesn't include pytest):
+From the repository root, in gui_env (`GUI_env.yml` includes pytest; an environment created before October 2026 needs `pip install pytest`):
 
 ```
 python -m pytest tests
@@ -176,18 +194,22 @@ They read the workflow file directly, with no Bonsai or hardware, and check that
 - the early-lick abort cuts the trial before the window and ends with the timeout and outcome `Early`;
 - no group's connections form a loop (Bonsai can't build or open a group with one);
 - the window layout lines up with the workflow;
-- the response, timing and latency rules described above are wired as intended.
+- the response, timing and latency rules described above are wired as intended;
+- every mouse loads, alone and with every preset, and `Presets.csv` names only real parameters and valid values;
+- `Rigs.csv` repeats no rig or hostname, and the rig check refuses a missing `rig.json`, an unknown rig or the wrong PC;
+- Push Data never overwrites a file and never leaves a half-copied one;
+- `PARAMETERS.md` lists every parameter with the panel's label, column and options.
 
 They can't tell you whether Bonsai builds and runs the workflow. For that, open it in Bonsai and run a short emulator session.
 
 ## Known issues
 
-These are current as of 5 October 2026.
+These are current as of 19 October 2026.
 
 - **Right valve time, fixed on 5 October 2026 for `SOUND_CAT`.** Before that, every right reward opened the right valve for `Left_Valve_Time`. On 31104 and 31105 the right spout was open about 26% longer than its calibration; on the other rigs the difference was under 5%. Each session's `Session_Parameters` records its `Rig_ID`. `PRO_ANTI` still opens the right valve for `Left_Valve_Time`; that is left for the protocol's owner to change.
 - **Trial 1 timing is unreliable.** Ignore trial 1 in analysis.
 - **`Correct_Side` isn't updated during the stable start** (see Reading Trial_Summary).
-- **Some options start no trials.** Protocol `SOUND_CAT_DISC` and `SOUND_CAT_CONT`, and Stage `Habituation_cont` and `Lick_To_Release_cont`, are offered by the panel but have no trial logic.
+- **Some old option values start no trials.** Protocol `SOUND_CAT_DISC` and `SOUND_CAT_CONT`, and Stage `Habituation_cont` and `Lick_To_Release_cont`, have no trial logic in the workflow. The panel no longer offers them, and Load refuses a spreadsheet row that uses them.
 - **Asymmetric distributions, fixed on 5 October 2026.** Before that, with `Asym_Left` or `Asym_Right` the stimulus stage ended as soon as the side was chosen. The go-cue delay started at sound onset, so the window opened as the sound ended, and some trials played no sound at all; those trials were scored, and rewarded, against the previous trial's stimulus. Sessions run with these distributions before that date are affected. `Asym_Left` was checked in the emulator before the fix; check both after it.
 - **The "fresh licks only" rule hasn't been tested on hardware** with a contact held through the window opening.
 - **Trial timing follows the display refresh.** The sound and the delay before the window usually vary by about one frame (17 ms), but they can end tens of ms early when the screen loop stalls. On opto sessions this happens on most opto trials, because the trial waits for Zapit's reply before the sound starts. The times recorded in the files are exact.
