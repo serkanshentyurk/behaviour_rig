@@ -472,6 +472,12 @@ def rig_pairs_from_row(row):
             for col in RIG_PARAM_COLS]
 
 
+def uses_arduino(rig_row):
+    """True if the rig's lick sensors and valves run on the Arduino Nano, False if on the Harp
+    behaviour board (the Arduino column of Rigs.csv)."""
+    return normalise_bool(rig_row.get('Arduino', '')) == 'True'
+
+
 def check_pairs(pairs, bool_keys):
     """Problems that would make the Bonsai parsers read the wrong thing."""
     problems = []

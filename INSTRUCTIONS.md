@@ -99,7 +99,7 @@ Field colours: after Load, blue fields come from the mouse's preset and yellow f
 
 | Button | What it does |
 |---|---|
-| **Flush Rig** | starts the water-line flushing workflow (`Params\Flush_Rig.bonsai`); press again to stop it |
+| **Flush Rig** | starts the water-line flushing workflow (`Params\Flush_Rig.bonsai` on Arduino rigs, `Params\Flush_Rig_Harp.bonsai` on Harp rigs); press again to stop it |
 | **Camera** | starts a live camera preview (`Params\Camera.bonsai`); press again to stop it. Stop it before launching a session, which uses the camera itself |
 | **Edit Workflow** | opens the task workflow in the Bonsai editor, set up so its file paths work; for looking at or changing the workflow (read the README first) |
 | **Test Speakers**, **Calibrate** | not implemented (greyed out) |

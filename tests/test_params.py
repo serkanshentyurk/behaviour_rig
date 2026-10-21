@@ -5,6 +5,7 @@ Runs off-rig, without Bonsai or a display:
 """
 import csv
 import os
+import re
 import sys
 from pathlib import Path
 
@@ -57,6 +58,18 @@ def test_rigs_csv_rows_are_usable():
     failures = [f"{r['rig']}: {p}" for r in rows
                 for p in params_io.check_pairs(params_io.rig_pairs_from_row(r), params_io.RIG_BOOL_KEYS)]
     assert not failures, "\n".join(failures)
+
+
+def test_every_harp_rig_can_be_flushed():
+    """Flush Rig starts Flush_Rig.bonsai on Arduino rigs and Flush_Rig_Harp.bonsai on Harp rigs. The
+    Harp version reads exactly four characters after 'Harp_Beh_Port: ', so the port must be COM1-COM9."""
+    assert params_io.uses_arduino({'Arduino': 'TRUE'}) and not params_io.uses_arduino({'Arduino': 'FALSE'})
+    for name in ('Flush_Rig.bonsai', 'Flush_Rig_Harp.bonsai'):
+        assert (REPO / 'Params' / name).exists(), f"Params/{name} is missing"
+    for r in params_io.read_rigs(RIGS):
+        if not params_io.uses_arduino(r):
+            assert re.fullmatch(r'COM[1-9]', r['Harp_Beh_Port']), \
+                f"rig {r['rig']}: Harp_Beh_Port is '{r['Harp_Beh_Port']}'; Flush_Rig_Harp.bonsai only reads COM1-COM9"
 
 
 def test_experimenter_files():

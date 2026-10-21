@@ -27,7 +27,8 @@ GUI_DIR = Path(__file__).resolve().parent
 REPO = GUI_DIR.parent
 WORKFLOW = REPO / 'Protocols' / 'Auditory_discrimination' / 'Sound_Cat_V2.bonsai'
 CAMERA_WORKFLOW = REPO / 'Params' / 'Camera.bonsai'
-FLUSH_WORKFLOW = REPO / 'Params' / 'Flush_Rig.bonsai'
+FLUSH_WORKFLOW = REPO / 'Params' / 'Flush_Rig.bonsai'             # rigs whose valves run on the Arduino
+FLUSH_WORKFLOW_HARP = REPO / 'Params' / 'Flush_Rig_Harp.bonsai'  # rigs with the Harp behaviour board
 MOUSE_PARAMS_XLSX = REPO / 'Params' / 'Mouse_Room_Params.xlsx'
 PRESETS_CSV = REPO / 'Params' / 'Presets.csv'
 RIGS_CSV = REPO / 'Params' / 'Rigs.csv'
@@ -358,7 +359,8 @@ def toggle_flush():
         return
     if refuse_if_bonsai_open():
         return
-    started = start_bonsai(FLUSH_WORKFLOW)
+    workflow = FLUSH_WORKFLOW if params_io.uses_arduino(RIG) else FLUSH_WORKFLOW_HARP
+    started = start_bonsai(workflow)
     if started is not None:
         process, S.flush_on = started, True
         refresh()

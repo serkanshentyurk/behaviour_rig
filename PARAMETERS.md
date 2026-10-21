@@ -132,7 +132,7 @@ One row per rig PC. The panel finds its row through `C:\ProgramData\MouseRoom\ri
 | `Hostname` | Windows computer name of that rig's PC; a mismatch blocks launch (catches cloned disks). |
 | `Room_ID, Rig_ID` | Labels, saved with the session. |
 | `Arduino` | `TRUE`: lick sensors and valves run through an Arduino Nano on `Arduino_Port`. `FALSE`: a Harp behaviour board on `Harp_Beh_Port`. The panel converts `TRUE`/`FALSE` to the `True`/`False` the workflow expects. |
-| `Harp_Beh_Port` | COM port of the Harp behaviour board (blank on Arduino rigs). |
+| `Harp_Beh_Port` | COM port of the Harp behaviour board (blank on Arduino rigs). Must be COM1–COM9: the Harp version of Flush Rig reads only four characters. |
 | `Sound_Card_Port` | COM port of the Harp sound card. |
 | `Arduino_Port` | COM port of the Arduino Nano (Arduino rigs). |
 | `Arduino_Mega_Port` | COM port of the Arduino Mega that drives the masking light and fibre (blank if none). |
