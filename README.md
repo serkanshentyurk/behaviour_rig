@@ -8,6 +8,7 @@ This is lab instrumentation. It drives specific hardware on specific Windows PCs
 |---|---|
 | run a session (start here if you are new) | [INSTRUCTIONS.md](INSTRUCTIONS.md) |
 | know what a parameter does | [PARAMETERS.md](PARAMETERS.md) |
+| train a mouse: water restriction, the daily routine, moving through the presets | [TRAINING.md](TRAINING.md) |
 | understand how the pieces fit, set up a rig, read the data files or change the code | this file |
 
 ## How a session runs
@@ -45,7 +46,7 @@ GUI/
   paths/<name>.json       one per experimenter: initials and server folder, used by Push Data
 Params/
   Mouse_Room_Params.xlsx  one row per mouse (sheet "Params"); its Preset column says custom or names a preset
-  Presets.csv             one column per preset, holding the values that preset sets
+  Presets.csv             one row per preset, holding the values that preset sets
   Rigs.csv                one row per rig PC: ports, valve times, speaker calibration
   Camera.bonsai, Flush_Rig.bonsai   utility workflows behind the Camera and Flush Rig buttons
   Subject_Params.csv, Rig_Params.csv   written by the panel; not in git
@@ -58,6 +59,7 @@ tests/
   test_rig_consistency.py the panel, the parameter files and the workflow agree
   test_params.py          presets, value checks, Rigs.csv, rig identity, Push Data
   test_docs.py            PARAMETERS.md matches the code
+Mouse_Room_Params_Example.xlsx   an example only: the values a mouse runs with at each training step
 Data/                     session data, written by Bonsai; not in git
 ```
 
@@ -210,6 +212,7 @@ These are current as of 19 October 2026.
 - **Trial 1 timing is unreliable.** Ignore trial 1 in analysis.
 - **`Correct_Side` isn't updated during the stable start** (see Reading Trial_Summary).
 - **Some old option values start no trials.** Protocol `SOUND_CAT_DISC` and `SOUND_CAT_CONT`, and Stage `Habituation_cont` and `Lick_To_Release_cont`, have no trial logic in the workflow. The panel no longer offers them, and Load refuses a spreadsheet row that uses them.
+- **Flush Rig only works on the Arduino rigs.** `Params/Flush_Rig.bonsai` has no Harp device, so on the Harp rigs (31101, 31102) it cannot open the valves.
 - **Asymmetric distributions, fixed on 5 October 2026.** Before that, with `Asym_Left` or `Asym_Right` the stimulus stage ended as soon as the side was chosen. The go-cue delay started at sound onset, so the window opened as the sound ended, and some trials played no sound at all; those trials were scored, and rewarded, against the previous trial's stimulus. Sessions run with these distributions before that date are affected. `Asym_Left` was checked in the emulator before the fix; check both after it.
 - **The "fresh licks only" rule hasn't been tested on hardware** with a contact held through the window opening.
 - **Trial timing follows the display refresh.** The sound and the delay before the window usually vary by about one frame (17 ms), but they can end tens of ms early when the screen loop stalls. On opto sessions this happens on most opto trials, because the trial waits for Zapit's reply before the sound starts. The times recorded in the files are exact.

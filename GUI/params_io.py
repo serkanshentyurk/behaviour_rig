@@ -21,8 +21,9 @@ says custom (or is empty), or names a preset:
             A preset is named after a Session Type, and Session_Type is set to that name,
             so the data files record which preset ran.
 
-Presets.csv has a Parameter column and one column per preset. An empty cell means the preset
-does not set that parameter; a cell that says NaN sets it to empty.
+Presets.csv has one row per preset: its name in the Preset column, an optional Description, and
+a column for each parameter. An empty cell means the preset does not set that parameter; a cell
+that says NaN sets it to empty.
 """
 import csv
 import json
@@ -51,6 +52,18 @@ def steps(start, stop, step):
     return np.round(np.arange(start, stop, step), 6)
 
 
+# The Session Types, which are also the preset names: each preset in Presets.csv is named after one.
+# Saved in Session_Parameters and every Trial_Summary row; the workflow does not branch on it.
+SESSION_TYPES = [
+    'habituation', 'lick-to-release', 'three-and-three',
+    'regular-antibias-200', 'regular-antibias-175', 'regular-antibias-150',
+    'regular-antibias-100', 'regular-antibias-050', 'regular-antibias-025',
+    'regular', 'hard-A', 'hard-B',
+    'masking-regular', 'masking-hard-A', 'masking-hard-B', 'washout-regular',
+    'opto-regular', 'opto-hard-A', 'opto-hard-B', 'control-alm-bi', 'control-alm-uni',
+]
+
+
 # SPEC is the single source of truth for the subject parameters. Row order sets the key order in
 # Subject_Params.csv and the order of the fields on each tab. PARAMETERS.md documents every row;
 # tests/test_docs.py fails if the two disagree.
@@ -59,7 +72,7 @@ SPEC = [
     ('Animal_ID',                      'Subject',                         'Subject',                      SUBJECTS,                                 'Session'),
     ('Protocol',                       'Protocol',                        'Protocol',                     ['SOUND_CAT', 'PRO_ANTI'],                'Session'),
     ('Stage',                          'Stage',                           'Stage',                        ['Habituation', 'Lick_To_Release', 'Three_And_Three', 'Full_Task_Disc', 'Full_Task_Cont'], 'Session'),
-    ('Session_Type',                   'Session_Type',                    'Session Type',                 ['regular', 'opto', 'masking', 'washout', 'alm_control_uni', 'alm_control_bi'], 'Session'),
+    ('Session_Type',                   'Session_Type',                    'Session Type',                 SESSION_TYPES,                            'Session'),
     ('Distribution',                   'Distribution',                    'Distribution',                 [EMPTY, 'Uniform', 'Asym_Left', 'Asym_Right'], 'Stimulus'),
     ('Sound_Duration',                 'Sound_Duration',                  'Sound Duration',               [50, 100, 150, 200, 250, 300, 350, 400, 450, 500], 'Stimulus'),
     ('Nb_Of_Stim',                     'Nb_Of_Stim',                      'Nb Of Stim',                   [EMPTY, 2, 4, 6, 8],                      'Stimulus'),
@@ -83,7 +96,7 @@ SPEC = [
     ('Stimulation_Type',               'Stimulation_Type',                'Stim Type',                    [EMPTY, 'Unilateral_Left', 'Unilateral_Right', 'Bilateral'], 'Opto'),
     ('AntiBias_Exp_Rate',              'AntiBias_Exp_Rate',               'AB_Exp_Rate',                  [EMPTY, 0.5, 1.0, 1.5, 2.0, 2.5, 3.0],    'Anti-bias'),
     ('AntiBias_Window',                'AntiBias_Window',                 'AB_Window',                    [EMPTY, 10, 20, 30, 40, 50],              'Anti-bias'),
-    ('AntiBias_Sigmoid_Slope',         'AntiBias_Sigmoid_Slope',          'AB_Slope',                     [EMPTY, 0.5, 1.0, 1.5, 2.0, 2.5, 3.0],    'Anti-bias'),
+    ('AntiBias_Sigmoid_Slope',         'AntiBias_Sigmoid_Slope',          'AB_Slope',                     steps(0, 3.25, 0.25),                     'Anti-bias'),
     ('Agent_Sim',                      'Agent_Sim',                       'Agent Sim',                    BOOL,                                     'Debug'),
     ('Agent_Performance',              'Agent_Performance',               'Agent Performance',            PROPS,                                    'Debug'),
     ('Agent_Bias',                     'Agent_Bias',                      'Agent Bias',                   PROPS,                                    'Debug'),
@@ -114,7 +127,7 @@ KEY_OF = {col: key for key, col, _, _, _ in SPEC}
 # e.g. the opto settings when Opto ON is False. Every other key must have a value.
 OPTIONAL_KEYS = {key for key, _, _, options, _ in SPEC
                  if isinstance(options, list) and EMPTY in options} | {
-    'Perc_Opto_Trials', 'Light_Freq (Hz)', 'Opto_Duration',
+    'Perc_Opto_Trials', 'Light_Freq (Hz)', 'Opto_Duration', 'AntiBias_Sigmoid_Slope',
     'Opto_Onset_1', 'Opto_Onset_2', 'Opto_Offset_1', 'Opto_Offset_2'}
 
 # Keys the workflow turns into a boolean by comparing the text with 'True' and 'False'
@@ -131,9 +144,10 @@ RIG_BOOL_KEYS = ['Arduino']
 
 # Spreadsheet and preset file layout.
 PARAMS_SHEET = 'Params'
-PRESET_COL = 'Preset'          # in the Params sheet; a missing column means every mouse is custom
+PRESET_COL = 'Preset'            # in the Params sheet (if missing, every mouse is custom), and the
+                                 # first column of Presets.csv
+DESCRIPTION_COL = 'Description'  # optional column of Presets.csv, for people only
 CUSTOM = 'custom'
-PRESET_NAME_COL = 'Parameter'  # first column of Presets.csv
 NOT_IN_PRESETS = ['Subject', 'Session_Type']   # the mouse, and the preset's own name
 
 
@@ -297,11 +311,11 @@ def subjects(mice):
 
 
 def read_presets(path):
-    """{name: Preset} from Presets.csv; no file means no presets.
+    """{name: Preset} from Presets.csv (one row per preset); no file means no presets.
 
-    A problem with the file as a whole (a misspelt parameter, a repeated row) is attached to
-    every preset, so no mouse loads with a preset until the file is fixed. Custom mice are
-    not affected."""
+    A problem with the file as a whole (a misspelt column, a row without a name) is attached to
+    every preset, so no mouse loads with a preset until the file is fixed. Custom mice are not
+    affected."""
     if not Path(path).exists():
         return {}
     try:
@@ -313,38 +327,45 @@ def read_presets(path):
         return {}
 
     header, body = rows[0], rows[1:]
-    names = header[1:]
-    params = [r[0] for r in body]
     shared = []
-    if header[0] != PRESET_NAME_COL:
-        shared.append(f"the first column of {Path(path).name} must be called {PRESET_NAME_COL}")
-    for label, items in (('column', names), ('row', params)):
-        repeated = sorted({x for x in items if items.count(x) > 1})
-        if repeated:
-            shared.append(f"more than one {label} called {', '.join(repeated)}")
-    for p in params:
-        if p in NOT_IN_PRESETS:
-            shared.append(f"a preset cannot set {p}" +
-                          (" (it is the preset's name)" if p == 'Session_Type' else ''))
-        elif p not in SPEC_COLUMNS:
-            shared.append(f"'{p}' is not a parameter column (misspelt?)")
+    if header[0] != PRESET_COL:
+        shared.append(f"the first column of {Path(path).name} must be called {PRESET_COL}")
+    repeated = sorted({c for c in header if c and header.count(c) > 1})
+    if repeated:
+        shared.append(f"more than one column called {', '.join(repeated)}")
+    columns = {}                                  # column index -> the parameter it sets
+    for i, col in enumerate(header[1:], start=1):
+        if col in (DESCRIPTION_COL, ''):
+            continue
+        if col in NOT_IN_PRESETS:
+            shared.append(f"a preset cannot set {col}" +
+                          (" (it is the preset's name)" if col == 'Session_Type' else ''))
+        elif col not in SPEC_COLUMNS:
+            shared.append(f"'{col}' is not a parameter column (misspelt?)")
+        else:
+            columns[i] = col
+    names = [r[0] for r in body]
+    if '' in names:
+        shared.append(f"{names.count('')} row(s) have no name in the {PRESET_COL} column")
 
     presets = {}
-    for i, name in enumerate(names, start=1):
+    for r in body:
+        name = r[0]
         if not name:
             continue
         own = []
+        if names.count(name) > 1:
+            own.append(f"the name '{name}' is used by more than one row")
         if name not in CHOICES['Session_Type']:
-            own.append(f"'{name}' is not a Session Type ({', '.join(CHOICES['Session_Type'])}); "
-                       "add it to Session_Type's options in params_io.py first")
+            own.append(f"'{name}' is not a Session Type; add it to SESSION_TYPES in params_io.py first")
         values = {}
-        for r in body:
+        for i, col in columns.items():
             cell = r[i] if i < len(r) else ''
-            if cell == '' or r[0] not in SPEC_COLUMNS or r[0] in NOT_IN_PRESETS:
+            if cell == '':
                 continue
-            key = KEY_OF[r[0]]
-            values[r[0]] = value_text(key, cell)
-            problem = check_value(key, values[r[0]])
+            key = KEY_OF[col]
+            values[col] = value_text(key, cell)
+            problem = check_value(key, values[col])
             if problem:
                 own.append(problem)
         presets[name] = Preset(name, values, shared + own)

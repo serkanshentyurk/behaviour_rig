@@ -130,10 +130,9 @@ def row_with(**cells):
 
 def test_custom_uses_the_row_and_a_preset_replaces_what_it_sets(tmp_path):
     presets = write_presets(tmp_path / 'Presets.csv', [
-        ['Parameter', 'opto', 'regular'],
-        ['Opto_ON', 'TRUE', 'False'],
-        ['Opto_Type', 'Zapit', 'NaN'],
-        ['Zapit_Nb_Conditions', '2', ''],
+        ['Preset', 'Description', 'Opto_ON', 'Opto_Type', 'Zapit_Nb_Conditions'],
+        ['opto-regular', 'light on, with a comma', 'TRUE', 'Zapit', '2'],
+        ['regular', '', 'False', 'NaN', ''],
     ])
     assert not any(p.problems for p in presets.values())
     row = dict(Opto_ON='FALSE', Opto_Type='Fiber', Zapit_Nb_Conditions=5, Inter_Trial_Interval=7)
@@ -141,12 +140,12 @@ def test_custom_uses_the_row_and_a_preset_replaces_what_it_sets(tmp_path):
     custom = params_io.resolve(row_with(Preset='custom', **row), presets)
     assert custom.values['Opto_Type'] == 'Fiber' and not custom.from_preset and not custom.overridden
 
-    opto = params_io.resolve(row_with(Preset='opto', **row), presets)
+    opto = params_io.resolve(row_with(Preset='opto-regular', **row), presets)
     assert not opto.problems
     assert (opto.values['Opto_ON'], opto.values['Opto_Type'], opto.values['Zapit_Nb_Conditions']) == ('True', 'Zapit', '2')
-    assert opto.values['Session_Type'] == 'opto'          # the preset's name is the Session Type
+    assert opto.values['Session_Type'] == 'opto-regular'  # the preset's name is the Session Type
     assert opto.values['Inter_Trial_Interval'] == '7'     # not set by the preset: from the row
-    # the row's own values the preset hides, which Load lists (the row's Session_Type is alm_control_uni)
+    # the row's own values the preset hides, which Load lists
     assert {col for col, _, _ in opto.overridden} == {'Session_Type', 'Opto_ON', 'Opto_Type', 'Zapit_Nb_Conditions'}
     assert ('Opto_Type', 'Fiber', 'Zapit') in opto.overridden
 
@@ -154,27 +153,29 @@ def test_custom_uses_the_row_and_a_preset_replaces_what_it_sets(tmp_path):
     assert regular.values['Opto_Type'] == params_io.EMPTY      # NaN in a preset sets it to empty
     assert regular.values['Zapit_Nb_Conditions'] == '5'        # empty preset cell: from the row
     assert {col for col, _, _ in regular.overridden} == {'Session_Type', 'Opto_Type'}    # Opto_ON agrees
-    empty_cell = params_io.resolve(row_with(Preset='opto', Opto_Type=None), presets)
-    assert 'Opto_Type' not in {col for col, _, _ in empty_cell.overridden}             # empty cells are not listed
+    empty_cell = params_io.resolve(row_with(Preset='opto-regular', Opto_Type=None), presets)
+    assert 'Opto_Type' not in {col for col, _, _ in empty_cell.overridden}            # empty cells are not listed
 
 
 def test_empty_preset_cell_is_custom_and_unknown_names_are_refused(tmp_path):
-    presets = write_presets(tmp_path / 'Presets.csv', [['Parameter', 'opto'], ['Opto_ON', 'True']])
+    presets = write_presets(tmp_path / 'Presets.csv', [['Preset', 'Opto_ON'], ['opto-regular', 'True']])
     assert params_io.resolve(row_with(Preset=None), presets).preset == params_io.CUSTOM
-    misspelt = params_io.resolve(row_with(Preset='opti'), presets)
-    assert misspelt.problems and 'opto' in misspelt.problems[0]
+    misspelt = params_io.resolve(row_with(Preset='opto-regualr'), presets)
+    assert misspelt.problems and 'opto-regular' in misspelt.problems[0]
 
 
 def test_mistakes_in_the_presets_file_are_reported(tmp_path):
     presets = write_presets(tmp_path / 'Presets.csv', [
-        ['Parameter', 'opto', 'my_preset'],
-        ['Opto_on', 'True', ''],             # misspelt parameter
-        ['Stage', 'Full_task_Cont', ''],     # not one of the options
-        ['Session_Type', 'opto', ''],        # set by the preset's name
+        ['Preset', 'Opto_on', 'Stage', 'Session_Type'],   # misspelt parameter; Session_Type is the name
+        ['opto-regular', 'True', 'Full_task_Cont', ''],   # value not among the options
+        ['my_preset', '', '', ''],                         # not a Session Type
+        ['regular', '', '', ''],
+        ['regular', '', '', ''],                           # the same name twice
     ])
-    text = '\n'.join(presets['opto'].problems)
+    text = '\n'.join(presets['opto-regular'].problems)
     assert "'Opto_on' is not a parameter" in text and 'Full_task_Cont' in text and 'cannot set Session_Type' in text
     assert any('not a Session Type' in p for p in presets['my_preset'].problems)
+    assert any('more than one row' in p for p in presets['regular'].problems)
 
 
 # ---------------------------------------------------------------- rig identity

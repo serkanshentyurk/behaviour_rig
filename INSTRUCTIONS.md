@@ -1,6 +1,6 @@
 # Running a session
 
-A step-by-step guide for someone who has not used the rig before. It covers the software only: preparing the mouse, water and hardware follows the lab's usual procedures. Parameter meanings are in [PARAMETERS.md](PARAMETERS.md); how the system works is in [README.md](README.md).
+A step-by-step guide for someone who has not used the rig before. It covers the software only; water restriction, preparing the rig, cleaning and moving a mouse through training are in [TRAINING.md](TRAINING.md). Parameter meanings are in [PARAMETERS.md](PARAMETERS.md); how the system works is in [README.md](README.md).
 
 If something here disagrees with what you see on the rig, trust the rig and tell whoever maintains the repository.
 

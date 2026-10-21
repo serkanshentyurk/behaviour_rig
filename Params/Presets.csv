@@ -1,48 +1,22 @@
-Parameter,regular,opto,masking,washout,alm_control_uni,alm_control_bi
-Protocol,,,,,,
-Stage,,,,,,
-Distribution,,,,,,
-Sound_Duration,,,,,,
-Nb_Of_Stim,,,,,,
-Stim_Type,,,,,,
-AntiBias,,,,,,
-Emulator,,,,,,
-Air_Puff_Contingency_Rule,,,,,,
-Show_Contingency_Switches,,,,,,
-Working_Memory_Type,,,,,,
-Sound_Air_Puff_Contingency,,,,,,
-Sound_Contingency,,,,,,
-Opto_ON,,,,,,
-Perc_Opto_Trials,,,,,,
-Light_Freq (Hz),,,,,,
-Opto_Onset_1,,,,,,
-Opto_Onset_2,,,,,,
-Opto_Offset_1,,,,,,
-Opto_Offset_2,,,,,,
-Opto_Duration,,,,,,
-Stimulation_Site,,,,,,
-Stimulation_Type,,,,,,
-AntiBias_Exp_Rate,,,,,,
-AntiBias_Window,,,,,,
-AntiBias_Sigmoid_Slope,,,,,,
-Agent_Sim,,,,,,
-Agent_Performance,,,,,,
-Agent_Bias,,,,,,
-Stim_Dur_Staircase,,,,,,
-Stim_Dur_Staircase_Perf_Thresh,,,,,,
-Stim_Dur_Staircase_Step,,,,,,
-Min_Stim_Dur,,,,,,
-Opto_Type,,,,,,
-Zapit_Nb_Conditions,,,,,,
-Inter_Trial_Interval,,,,,,
-Timeout_Duration,,,,,,
-Response_Window,,,,,,
-Stim_Range_Min,,,,,,
-Stim_Range_Max,,,,,,
-Go_Cue_Duration,,,,,,
-Early_Lick_Abort,,,,,,
-Visualiser_Window_Size,,,,,,
-Stable_Start,,,,,,
-Stable_Start_Window,,,,,,
-Max_Trials_Consec,,,,,,
-Stable_Stim_Dist_Boundary,,,,,,
+Preset,Description,Protocol,Stage,Air_Puff_Contingency_Rule,AntiBias,Distribution,Stim_Type,Nb_Of_Stim,Emulator,Show_Contingency_Switches,Sound_Contingency,Sound_Air_Puff_Contingency,Working_Memory_Type,Sound_Duration,AntiBias_Exp_Rate,AntiBias_Window,AntiBias_Sigmoid_Slope,Agent_Sim,Agent_Performance,Agent_Bias,Stim_Dur_Staircase,Stim_Dur_Staircase_Perf_Thresh,Stim_Dur_Staircase_Step,Min_Stim_Dur,Inter_Trial_Interval,Timeout_Duration,Response_Window,Stim_Range_Min,Stim_Range_Max,Go_Cue_Duration,Visualiser_Window_Size,Stable_Start,Stable_Start_Window,Max_Trials_Consec,Stable_Stim_Dist_Boundary,Opto_ON,Opto_Type,Zapit_Nb_Conditions,Perc_Opto_Trials,Light_Freq (Hz),Opto_Onset_1,Opto_Onset_2,Opto_Offset_1,Opto_Offset_2,Opto_Duration,Stimulation_Site,Stimulation_Type,Early_Lick_Abort
+habituation,Water every 10 s from either spout; no lick needed (about 1 day). ITI 10 s.,SOUND_CAT,Habituation,NaN,True,Uniform,WN,2,False,False,,Low_Pro_High_Anti,Fixed,300,1,30,1.75,False,0.8,0.5,False,0.8,50,50,10,3,10,50,82,300,30,True,20,3,0.8,False,NaN,NaN,NaN,NaN,NaN,NaN,NaN,NaN,NaN,NaN,NaN,False
+lick-to-release,"Every lick is rewarded, on the side licked (1-2 days).",SOUND_CAT,Lick_To_Release,NaN,True,Uniform,WN,2,False,False,,Low_Pro_High_Anti,Fixed,300,1,30,1.75,False,0.8,0.5,False,0.8,50,50,2,3,10,50,82,300,30,True,20,3,0.8,False,NaN,NaN,NaN,NaN,NaN,NaN,NaN,NaN,NaN,NaN,NaN,False
+three-and-three,"As lick-to-release, but the mouse has to lick each side 3 times in a row (3-5 days).",SOUND_CAT,Three_And_Three,NaN,True,Uniform,WN,2,False,False,,Low_Pro_High_Anti,Fixed,300,1,30,1.75,False,0.8,0.5,False,0.8,50,50,2,3,10,50,82,300,30,True,20,3,0.8,False,NaN,NaN,NaN,NaN,NaN,NaN,NaN,NaN,NaN,NaN,NaN,False
+regular-antibias-200,"Full task, sound levels drawn evenly across the range. Anti-bias on, slope 2.00. Sound 300 ms.",SOUND_CAT,Full_Task_Cont,NaN,True,Uniform,WN,8,False,False,,Low_Pro_High_Anti,Fixed,300,1,30,2,False,0.8,0.5,False,0.8,50,50,2,3,10,50,82,300,30,True,20,3,0.8,False,NaN,NaN,NaN,NaN,NaN,NaN,NaN,NaN,NaN,NaN,NaN,False
+regular-antibias-175,"Full task, sound levels drawn evenly across the range. Anti-bias on, slope 1.75. Sound 300 ms.",SOUND_CAT,Full_Task_Cont,NaN,True,Uniform,WN,8,False,False,,Low_Pro_High_Anti,Fixed,300,1,30,1.75,False,0.8,0.5,False,0.8,50,50,2,3,10,50,82,300,30,True,20,3,0.8,False,NaN,NaN,NaN,NaN,NaN,NaN,NaN,NaN,NaN,NaN,NaN,False
+regular-antibias-150,"Full task, sound levels drawn evenly across the range. Anti-bias on, slope 1.50. Sound 300 ms.",SOUND_CAT,Full_Task_Cont,NaN,True,Uniform,WN,8,False,False,,Low_Pro_High_Anti,Fixed,300,1,30,1.5,False,0.8,0.5,False,0.8,50,50,2,3,10,50,82,300,30,True,20,3,0.8,False,NaN,NaN,NaN,NaN,NaN,NaN,NaN,NaN,NaN,NaN,NaN,False
+regular-antibias-100,"Full task, sound levels drawn evenly across the range. Anti-bias on, slope 1.00. Sound 150 ms.",SOUND_CAT,Full_Task_Cont,NaN,True,Uniform,WN,8,False,False,,Low_Pro_High_Anti,Fixed,150,1,30,1,False,0.8,0.5,False,0.8,50,50,2,3,10,50,82,300,30,True,20,3,0.8,False,NaN,NaN,NaN,NaN,NaN,NaN,NaN,NaN,NaN,NaN,NaN,False
+regular-antibias-050,"Full task, sound levels drawn evenly across the range. Anti-bias on, slope 0.50. Sound 150 ms.",SOUND_CAT,Full_Task_Cont,NaN,True,Uniform,WN,8,False,False,,Low_Pro_High_Anti,Fixed,150,1,30,0.5,False,0.8,0.5,False,0.8,50,50,2,3,10,50,82,300,30,True,20,3,0.8,False,NaN,NaN,NaN,NaN,NaN,NaN,NaN,NaN,NaN,NaN,NaN,False
+regular-antibias-025,"Full task, sound levels drawn evenly across the range. Anti-bias on, slope 0.25. Sound 150 ms.",SOUND_CAT,Full_Task_Cont,NaN,True,Uniform,WN,8,False,False,,Low_Pro_High_Anti,Fixed,150,1,30,0.25,False,0.8,0.5,False,0.8,50,50,2,3,10,50,82,300,30,True,20,3,0.8,False,NaN,NaN,NaN,NaN,NaN,NaN,NaN,NaN,NaN,NaN,NaN,False
+regular,"Full task, sound levels drawn evenly across the range. Anti-bias off. Sound 150 ms.",SOUND_CAT,Full_Task_Cont,NaN,False,Uniform,WN,8,False,False,,Low_Pro_High_Anti,Fixed,150,1,30,0,False,0.8,0.5,False,0.8,50,50,2,3,10,50,82,300,30,True,20,3,0.8,False,NaN,NaN,NaN,NaN,NaN,NaN,NaN,NaN,NaN,NaN,NaN,False
+hard-A,"As regular, with Distribution Asym_Right: low sounds are drawn close to the boundary, so most sounds are on the high half.",SOUND_CAT,Full_Task_Cont,NaN,False,Asym_Right,WN,8,False,False,,Low_Pro_High_Anti,Fixed,150,1,30,0,False,0.8,0.5,False,0.8,50,50,2,3,10,50,82,300,30,True,20,3,0.8,False,NaN,NaN,NaN,NaN,NaN,NaN,NaN,NaN,NaN,NaN,NaN,False
+hard-B,"As regular, with Distribution Asym_Left: high sounds are drawn close to the boundary, so most sounds are on the low half.",SOUND_CAT,Full_Task_Cont,NaN,False,Asym_Left,WN,8,False,False,,Low_Pro_High_Anti,Fixed,150,1,30,0,False,0.8,0.5,False,0.8,50,50,2,3,10,50,82,300,30,True,20,3,0.8,False,NaN,NaN,NaN,NaN,NaN,NaN,NaN,NaN,NaN,NaN,NaN,False
+masking-regular,As opto-regular in every panel setting; masking comes from the Zapit configuration you load.,SOUND_CAT,Full_Task_Cont,NaN,False,Uniform,WN,8,False,False,,Low_Pro_High_Anti,Fixed,150,1,30,0,False,0.8,0.5,False,0.8,50,50,2,3,10,50,82,300,30,True,20,3,0.8,True,Zapit,1,30,NaN,Sound,NaN,Feedback,Inter_Trial_Interval,NaN,PPC,Bilateral,False
+masking-hard-A,As opto-hard-A in every panel setting; masking comes from the Zapit configuration you load.,SOUND_CAT,Full_Task_Cont,NaN,False,Asym_Right,WN,8,False,False,,Low_Pro_High_Anti,Fixed,150,1,30,0,False,0.8,0.5,False,0.8,50,50,2,3,10,50,82,300,30,True,20,3,0.8,True,Zapit,1,30,NaN,Sound,NaN,Feedback,Inter_Trial_Interval,NaN,PPC,Bilateral,False
+masking-hard-B,As opto-hard-B in every panel setting; masking comes from the Zapit configuration you load.,SOUND_CAT,Full_Task_Cont,NaN,False,Asym_Left,WN,8,False,False,,Low_Pro_High_Anti,Fixed,150,1,30,0,False,0.8,0.5,False,0.8,50,50,2,3,10,50,82,300,30,True,20,3,0.8,True,Zapit,1,30,NaN,Sound,NaN,Feedback,Inter_Trial_Interval,NaN,PPC,Bilateral,False
+washout-regular,"As regular, no light.",SOUND_CAT,Full_Task_Cont,NaN,False,Uniform,WN,8,False,False,,Low_Pro_High_Anti,Fixed,150,1,30,0,False,0.8,0.5,False,0.8,50,50,2,3,10,50,82,300,30,True,20,3,0.8,False,NaN,NaN,NaN,NaN,NaN,NaN,NaN,NaN,NaN,NaN,NaN,False
+opto-regular,"As regular, with Zapit on 30% of trials: PPC, bilateral, light from Sound to Feedback.",SOUND_CAT,Full_Task_Cont,NaN,False,Uniform,WN,8,False,False,,Low_Pro_High_Anti,Fixed,150,1,30,0,False,0.8,0.5,False,0.8,50,50,2,3,10,50,82,300,30,True,20,3,0.8,True,Zapit,1,30,NaN,Sound,NaN,Feedback,Inter_Trial_Interval,NaN,PPC,Bilateral,False
+opto-hard-A,"As hard-A (Asym_Right), with Zapit as in opto-regular.",SOUND_CAT,Full_Task_Cont,NaN,False,Asym_Right,WN,8,False,False,,Low_Pro_High_Anti,Fixed,150,1,30,0,False,0.8,0.5,False,0.8,50,50,2,3,10,50,82,300,30,True,20,3,0.8,True,Zapit,1,30,NaN,Sound,NaN,Feedback,Inter_Trial_Interval,NaN,PPC,Bilateral,False
+opto-hard-B,"As hard-B (Asym_Left), with Zapit as in opto-regular.",SOUND_CAT,Full_Task_Cont,NaN,False,Asym_Left,WN,8,False,False,,Low_Pro_High_Anti,Fixed,150,1,30,0,False,0.8,0.5,False,0.8,50,50,2,3,10,50,82,300,30,True,20,3,0.8,True,Zapit,1,30,NaN,Sound,NaN,Feedback,Inter_Trial_Interval,NaN,PPC,Bilateral,False
+control-alm-bi,"As regular, with Zapit on 30% of trials: ALM, bilateral, light from Sound to Feedback.",SOUND_CAT,Full_Task_Cont,NaN,False,Uniform,WN,8,False,False,,Low_Pro_High_Anti,Fixed,150,1,30,0,False,0.8,0.5,False,0.8,50,50,2,3,10,50,82,300,30,True,20,3,0.8,True,Zapit,1,30,NaN,Sound,NaN,Feedback,Inter_Trial_Interval,NaN,ALM,Bilateral,False
+control-alm-uni,"As control-alm-bi, but on the right side only.",SOUND_CAT,Full_Task_Cont,NaN,False,Uniform,WN,8,False,False,,Low_Pro_High_Anti,Fixed,150,1,30,0,False,0.8,0.5,False,0.8,50,50,2,3,10,50,82,300,30,True,20,3,0.8,True,Zapit,1,30,NaN,Sound,NaN,Feedback,Inter_Trial_Interval,NaN,ALM,Unilateral_Right,False
