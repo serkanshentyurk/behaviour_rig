@@ -72,6 +72,18 @@ def test_every_harp_rig_can_be_flushed():
                 f"rig {r['rig']}: Harp_Beh_Port is '{r['Harp_Beh_Port']}'; Flush_Rig_Harp.bonsai only reads COM1-COM9"
 
 
+def test_harp_flush_waits_for_the_board():
+    """Flush_Rig_Harp.bonsai connects to the Harp board after a delay (DelaySubscription), and commands
+    sent before that are lost. With both at 1 s the valves never opened, so the timer that sends
+    the open commands must fire at least a second after the connection (3 s since October 2026)."""
+    text = (REPO / 'Params' / 'Flush_Rig_Harp.bonsai').read_text(encoding='utf-8')
+    timer = re.search(r'rx:Timer">\s*<rx:DueTime>PT([\d.]+)S<', text)
+    delay = re.search(r'DelaySubscription">\s*<\w+:DueTime>PT([\d.]+)S<', text)
+    assert timer and delay, "timer or connection delay not found in Flush_Rig_Harp.bonsai"
+    assert float(timer.group(1)) >= float(delay.group(1)) + 1, \
+        f"the open commands go out at {timer.group(1)} s but the board is connected only after {delay.group(1)} s"
+
+
 def test_experimenter_files():
     experimenters = push_data.load_experimenters(EXPERIMENTERS)
     assert len(experimenters) == len(list(EXPERIMENTERS.glob('*.json'))), "a file in GUI/paths was skipped"

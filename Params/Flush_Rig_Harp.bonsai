@@ -540,7 +540,7 @@ BeamXbool -- bool -- readout  for hi/lo state of photogate/lickspout connected t
       </Expression>
       <Expression xsi:type="Combinator">
         <Combinator xsi:type="rx:Timer">
-          <rx:DueTime>PT1S</rx:DueTime>
+          <rx:DueTime>PT3S</rx:DueTime>
           <rx:Period>PT0S</rx:Period>
         </Combinator>
       </Expression>
