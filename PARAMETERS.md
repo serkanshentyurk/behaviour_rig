@@ -23,7 +23,7 @@ A preset fixes a group of parameters for every mouse that uses it, so changing w
 - Every mouse keeps a full row in the spreadsheet. Its `Preset` cell says `custom` (or is empty), or names a preset.
 - `custom`: the mouse's row is used as it is.
 - A preset name: for every parameter the preset sets, the preset's value is used and the row's value is ignored. Parameters the preset leaves empty still come from the row.
-- Presets are named after Session Types (the Session Type options in the Session tab table below), and using one sets Session Type to its name, so `Session_Parameters` and every `Trial_Summary` row record which preset ran. A new kind of preset needs a new Session Type option in `SPEC` first.
+- Presets are named after Session Types (the Session Type options in the Session tab table below), and using one sets Session Type to its name, so `Session_Parameters` and every `Trial_Summary` row record which preset ran. To add a preset, see [TRAINING.md](TRAINING.md#changing-or-adding-presets): its name has to be added to `SESSION_TYPES` in `GUI/params_io.py` first.
 - `Params/Presets.csv` has one row per preset: its name in the `Preset` column, an optional `Description`, and a column for each parameter. An empty cell means the preset does not set that parameter, so the mouse's row is used; `NaN` sets it to empty. Columns no preset uses can be deleted.
 - Values can still be changed in the panel for one session; Overwrite writes what the fields show. If you change a value the preset sets but leave Session Type as the preset's name, Overwrite points out that the data will still carry that name.
 
@@ -94,7 +94,7 @@ No task parameters: the Setup tab holds the **Experimenter** choice (used by Pus
 
 | Panel label | Spreadsheet column | Options | Unit | What it does |
 |---|---|---|---|---|
-| Opto ON | `Opto_ON` | True, False |  | Session-level switch for optogenetics and masking. When `True`: the masking light comes on at Onset_1 and goes off at Offset_1 on **every** trial, and on a random Perc_Opto_Trials % of trials the light source in Opto Type is triggered as well. Masking sessions are run as opto sessions with a Zapit configuration at 0 laser power; set Session Type to `masking` so the data say which it was. |
+| Opto ON | `Opto_ON` | True, False |  | Session-level switch for optogenetics and masking. When `True`: the masking light comes on at Onset_1 and goes off at Offset_1 on **every** trial, and on a random Perc_Opto_Trials % of trials the light source in Opto Type is triggered as well. Masking sessions are run as opto sessions with a Zapit configuration at 0 laser power; use one of the `masking-…` presets, so that Session Type says which it was. |
 | % Trials | `Perc_Opto_Trials` | nan, 0–100 in steps of 5 | % | Share of trials that get light. Drawn independently on each trial, so the exact number varies. |
 | Light Freq (Hz) | `Light_Freq (Hz)` | nan, 0–100 in steps of 10 | Hz | Not used by the current workflow (saved in Session_Parameters only). |
 | Stim Site | `Stimulation_Site` | nan, PPC, ACC, ALM |  | A label only (brain area), saved in Session_Parameters and every Trial_Summary row. Where the light actually goes is set in Zapit. |

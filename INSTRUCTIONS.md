@@ -1,6 +1,6 @@
 # Running a session
 
-A step-by-step guide for someone who has not used the rig before. It covers the software only; water restriction, preparing the rig, cleaning and moving a mouse through training are in [TRAINING.md](TRAINING.md). Parameter meanings are in [PARAMETERS.md](PARAMETERS.md); how the system works is in [README.md](README.md).
+A step-by-step guide for someone who has not used the rig before. It covers the software only; water restriction, preparing the rig, cleaning and moving a mouse through training are in [TRAINING.md](TRAINING.md), the rigs themselves in [HARDWARE.md](HARDWARE.md), and Zapit in [ZAPIT.md](ZAPIT.md). Parameter meanings are in [PARAMETERS.md](PARAMETERS.md); how the system works is in [README.md](README.md).
 
 If something here disagrees with what you see on the rig, trust the rig and tell whoever maintains the repository.
 
@@ -69,9 +69,9 @@ Field colours: after Load, blue fields come from the mouse's preset and yellow f
 
    Changes made here apply to **this session only** and are not written back to the spreadsheet. To change a mouse's defaults, the spreadsheet `Params/Mouse_Room_Params.xlsx` has to be edited in the repository and pushed. An edit made on the rig is overwritten the next time the launcher starts. To move a mouse onto a preset, or back to `custom`, change its Preset cell in the spreadsheet; to change what a preset sets for every mouse on it, edit `Params/Presets.csv` the same way.
 
-5. **Opto and masking only: set up Zapit before launching.**
+5. **Opto and masking only: set up Zapit before launching.** Starting Zapit, its configurations and the laser light at the door are in [ZAPIT.md](ZAPIT.md).
    - **Zapit Nb Conditions** (Opto tab) must equal the number of conditions in the configuration loaded in Zapit. At start-up the session checks this; if Zapit has no configuration loaded or the number differs, the session ends itself.
-   - **Masking sessions:** run them as opto sessions (Opto ON = True, Opto Type = Zapit) with a Zapit configuration at 0 laser power, and set **Session Type = masking**. The data can only tell masking from opto by that label.
+   - **Masking sessions:** use one of the `masking-…` presets. They run as opto sessions (Opto ON = True, Opto Type = Zapit), so load a Zapit configuration at 0 laser power. The data can only tell masking from opto by the Session Type the preset sets.
 
 6. **Press Launch Bonsai.**
    - Bonsai opens and starts the task. Within a few seconds four windows appear: the camera image, a text window with the latest trial's summary, a rolling performance graph and a bar graph. Trials start on their own.
@@ -91,7 +91,7 @@ Field colours: after Load, blue fields come from the mouse's preset and yellow f
    - It only copies mice whose ID starts with your initials (SS…, QP…).
    - It never overwrites a file already on the server and never deletes anything on the rig. At the end it says how many files it copied. A file already on the server with a different size (usually copied from an unfinished session) is listed and left alone, so you can check it by hand.
    - It refuses while Bonsai is open, so that no file is copied while it is still being written.
-   - The server drive must be mapped in Windows (any letter).
+   - The server must be mapped as a drive in Windows (Z: on the rig PCs; see the README, [Access you need](README.md#access-you-need)).
 
 9. **Check the data** if you want: `Data\<mouse>\<protocol>_<mouse>_<date>\` should contain six CSV files whose names end with the session's start time. The README explains each file.
 
@@ -147,3 +147,5 @@ To try **Early Lick Abort** in the emulator: switch it on, press 1 or 2 while th
 | "Select an experimenter before pushing" | no experimenter chosen | choose one on the Setup tab |
 | "No server found on current machine" | the server drive isn't mapped, or the path in `GUI\paths\<name>.json` doesn't exist on it | map the drive and try again |
 | Push Data lists files "on the server with a different size" | an earlier push copied a session before it had finished | compare the two copies by hand; Push Data never overwrites |
+| No water comes out during Flush Rig or a session, on a Harp rig (31101, 31102) | the board's valve outputs have switched to pulse mode | in the Harp Behaviour app, set Use pulse to false ([HARDWARE.md](HARDWARE.md#the-harp-behaviour-app)) |
+| Bonsai won't start, with an error about a COM or serial port | a USB cable or hub was swapped and the ports changed | find the new ports and update `Rigs.csv` ([HARDWARE.md](HARDWARE.md#com-ports)) |

@@ -6,10 +6,38 @@ This is lab instrumentation. It drives specific hardware on specific Windows PCs
 
 | If you want to… | read |
 |---|---|
-| run a session (start here if you are new) | [INSTRUCTIONS.md](INSTRUCTIONS.md) |
+| start in the lab | [New here?](#new-here), below |
+| train a mouse: water restriction, the daily routine, moving through the presets, the experiments | [TRAINING.md](TRAINING.md) |
+| run a session on the control panel | [INSTRUCTIONS.md](INSTRUCTIONS.md) |
 | know what a parameter does | [PARAMETERS.md](PARAMETERS.md) |
-| train a mouse: water restriction, the daily routine, moving through the presets | [TRAINING.md](TRAINING.md) |
-| understand how the pieces fit, set up a rig, read the data files or change the code | this file |
+| set up, calibrate or fix a rig | [HARDWARE.md](HARDWARE.md) |
+| run opto, masking or ALM control sessions | [ZAPIT.md](ZAPIT.md) |
+| do the head-plate surgery | [SURGERY.md](SURGERY.md) |
+| understand how the pieces fit, read the data files or change the code | this file |
+
+## New here?
+
+Read in this order:
+1. [Access you need](#access-you-need) and [Contacts](#contacts), below.
+2. [TRAINING.md](TRAINING.md): the whole routine, from surgery to the experiments.
+3. [INSTRUCTIONS.md](INSTRUCTIONS.md): the control panel, step by step. Read it before your first session, and try a session in the emulator first; it needs no mouse.
+4. [HARDWARE.md](HARDWARE.md): what is on the rigs, and fixes for the common problems.
+5. Before any opto, masking or ALM control session: [ZAPIT.md](ZAPIT.md).
+
+[PARAMETERS.md](PARAMETERS.md) is the reference for every setting, and [SURGERY.md](SURGERY.md) covers the head-plate surgery.
+
+## Access you need
+
+- **This repository.** It is at https://github.com/serkanshentyurk/behaviour_rig for now and will move to the lab's GitHub. The lab manual, also on the lab's GitHub, says how to get access to the lab's repositories.
+- **The rig PCs.** Each rig has its own PC in the room, with one account; the password is the user name.
+- **The server.** It is mapped as drive Z: on the rig PCs; how to map it is on the SWC IT wiki. Make your own folder there; the suggested layout is `Z:\<Name>\Head_Fixed_Behavior\Data\Raw`.
+- **Push Data.** Add `GUI/paths/<name>.json` with your initials and your server folder without the drive letter, for example `{"initials": "AB", "data_path": "/Name/Head_Fixed_Behavior/Data/Raw"}`, then commit and push. The Experimenter list on the Setup tab is built from these files, and Push Data only copies mice whose nickname starts with the initials. (`params_path` in the existing files is not used.)
+- **The restriction sheet**, on SharePoint under SWC PIL › restriction sheets › Akrami Lab. SWC accounts normally have access; if yours doesn't, ask SWC IT.
+- **Inductions and licences** (the SWC inductions, the PIL course and assessments) are not covered here: ask the PI or the lab manager, or see the lab manual.
+
+## Contacts
+
+- **Quentin Pajot-Moric** (quentin.pajot-moric.16@ucl.ac.uk): the rig hardware, Zapit and this code.
 
 ## How a session runs
 
@@ -64,37 +92,23 @@ Mouse_Room_Params_Example.xlsx   an example only: the values a mouse runs with a
 Data/                     session data, written by Bonsai; not in git
 ```
 
+The other task folders in `Protocols/` (`PWM_auditory`, `DMTS`, `Amplitude_Modulation`, and `Pro_Anti/Pro_Anti.bonsai`) are older standalone tasks. The panel does not run them, and they use paths from earlier layouts.
+
+Setting up a rig PC, calibration and the hardware itself are in [HARDWARE.md](HARDWARE.md).
+
 **Stack.**
 - The panel is Python 3.10 with tkinter, pandas/openpyxl, psutil and python-osc. It talks to the running workflow over OSC on port 1334.
 - The task runs in Bonsai 2.7, which saves the workflow as version 2.7.0.
 - Custom operators are written in C#, and the lick/valve board is an Arduino.
 - Hardware: Harp sound card, plus a Harp behaviour board or an Arduino Nano for lick sensors and valves, camera, and optionally Zapit or fibre optogenetics with an Arduino Mega for the masking light.
 
-## Setting up a rig PC (once)
-
-1. **Bonsai 2.7** installed for the Windows user, so that `%LOCALAPPDATA%\Bonsai\Bonsai.exe` exists. It needs these packages:
-   - Bonsai.Core, Bonsai.System, Bonsai.Design.Visualizers
-   - Bonsai.Scripting.Expressions, Bonsai.Scripting.IronPython
-   - Bonsai.Numerics, Bonsai.Dsp, Bonsai.Vision, Bonsai.Osc, Bonsai.Windows.Input, Bonsai.Shaders
-   - Bonsai.Harp, Bonsai.Harp.CF
-   - BonVision
-
-   This list is taken from the workflow file's namespace declarations. Opening the workflow once in the editor shows any that are missing.
-2. **Miniconda or Anaconda** in the user folder (`%USERPROFILE%\miniconda3` or `anaconda3`; the launcher looks there). Then run `conda env create -f GUI/GUI_env.yml` to create `gui_env`.
-3. **Git** on the PATH, and the repository cloned on the PC.
-4. **Register the rig.**
-   - Add a row to `Params/Rigs.csv`, with the PC's Windows computer name in `Hostname`, then commit and push.
-   - On the PC, create `C:\ProgramData\MouseRoom\rig.json` containing `{"rig": "<id>"}`.
-5. **A desktop shortcut** to `GUI\Launch_Bonsai_GUI.bat`.
-6. **Check.** Start the panel; the bottom line should read `Rig <id>   (<computer name>)` in green.
-
-**Adding an experimenter.** Add `GUI/paths/<name>.json` with the initials and server folder, for example `{"initials": "AB", "data_path": "/Name/Head_Fixed_Behavior/Data"}`, then commit and push. The Experimenter list on the Setup tab is built from these files, and Push Data only copies subjects whose ID starts with the initials. (`params_path` in the existing files is not used.)
-
 ## Output files
 
 Each session writes into `Data/<subject>/<protocol>_<subject>_<YYYY>_<M>_<D>/`, for example `Data/SS14/SOUND_CAT_SS14_2026_10_5/`. Every file name ends with the session's start time, e.g. `Trial_Summary2026-10-05T15_16_16.csv`, so several sessions on one day share a folder.
 
 All `Time` columns are **seconds since midnight on the rig PC's clock**, and every file uses the same clock, so they can be aligned directly.
+
+To analyse sessions, use [behav_utils](https://github.com/serkanshentyurk/behav_utils), which reads these files. It will move to the lab's GitHub along with this repository.
 
 | File | One row per | Columns |
 |---|---|---|
@@ -155,17 +169,6 @@ Things to know when analysing it:
   - Each row is a command to Zapit or Zapit's reply.
   - The `Data` field is a tuple such as `(254, 0, 0, 0, 0, 0, 0)`. It contains commas and isn't quoted, so a normal CSV reader splits it. Read the file line by line instead.
 
-## Calibrating a rig
-
-Calibration results go into the rig's row of `Params/Rigs.csv`: `Left_Valve_Time` and `Right_Valve_Time` from water calibration, `Speaker_Slope` and `Speaker_Y_Intercept` from sound calibration.
-
-- Water: `Protocols/Water_calibration/Manual_Calibration_Arduino.bonsai` (Arduino rigs) or `Manual_Calibration_Harp.bonsai` (Harp rigs), with `Water_Calib_Plots.ipynb`.
-- Sound: `Protocols/Sound_Calibration/WN_Volume_Calibration.bonsai` and `Test_Volume_Cal.bonsai`, with `Vol_Calib_Plots.ipynb`.
-
-These workflows predate the current folder layout and the panel does not run them. Check their file paths and ports in the editor before using one: the sound workflows read `Rig_Params.csv` from `C:\Users\MouseRoom\Desktop\HeadFixedBehavior\Params\` or `C:\Users\Psychophysics\Desktop\HeadFixedBehavior\Params\`, `Manual_Calibration_Arduino.bonsai` reads `../../Params/Rig_Params.csv`, and `Manual_Calibration_Harp.bonsai` has `COM4` written in.
-
-The other task folders in `Protocols/` (`PWM_auditory`, `DMTS`, `Amplitude_Modulation`, and `Pro_Anti/Pro_Anti.bonsai`) are older standalone tasks. The panel does not run them, and they use paths from earlier layouts.
-
 ## Changing the code or the workflow
 
 - **Change things on a development machine, then commit and push.** Every rig resets its copy to `origin/main` each time the launcher starts, so changes made on a rig are lost. That includes the spreadsheet.
@@ -207,7 +210,7 @@ They can't tell you whether Bonsai builds and runs the workflow. For that, open 
 
 ## Known issues
 
-These are current as of 19 October 2026.
+These are current as of 22 October 2026.
 
 - **Right valve time, fixed on 5 October 2026 for `SOUND_CAT`.** Before that, every right reward opened the right valve for `Left_Valve_Time`. On 31104 and 31105 the right spout was open about 26% longer than its calibration; on the other rigs the difference was under 5%. Each session's `Session_Parameters` records its `Rig_ID`. `PRO_ANTI` still opens the right valve for `Left_Valve_Time`; that is left for the protocol's owner to change.
 - **Trial 1 timing is unreliable.** Ignore trial 1 in analysis.
@@ -219,3 +222,4 @@ These are current as of 19 October 2026.
 - **There is no go-cue sound.** The delay before the window is silent. A go-cue tone using the sound card's built-in tone generator was tried on 7 October 2026 and removed. On the cards' firmware (2.1), the tone left the card refusing the command that ends the white noise until it was switched off and on, which stopped sessions. Any card that played the tone needs a power cycle before it's used again.
 - **Lick times lag on Arduino rigs** by about 25 ms, because the serial link runs at 9600 baud.
 - **Masking and opto sessions look identical** in the data except for `Session_Type`. The laser power is set in Zapit.
+- **Harp behaviour boards sometimes switch their valve outputs to pulse mode** on their own. The valves then only open for an instant, so little or no water comes out, in Flush Rig or a session. Why is not known; the fix is a setting in the Harp Behaviour app ([HARDWARE.md](HARDWARE.md#the-harp-behaviour-app)).
