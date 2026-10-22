@@ -4,20 +4,21 @@ Software for running head-fixed mouse auditory-behaviour experiments on the trai
 
 This is lab instrumentation. It drives specific hardware on specific Windows PCs and is not meant to run anywhere else.
 
-| If you want to… | read |
-|---|---|
-| start in the lab | [New here?](#new-here), below |
-| train a mouse: water restriction, the daily routine, moving through the presets, the experiments | [TRAINING.md](TRAINING.md) |
-| run a session on the control panel | [INSTRUCTIONS.md](INSTRUCTIONS.md) |
-| know what a parameter does | [PARAMETERS.md](PARAMETERS.md) |
-| set up, calibrate or fix a rig | [HARDWARE.md](HARDWARE.md) |
-| run opto, masking or ALM control sessions | [ZAPIT.md](ZAPIT.md) |
-| do the head-plate surgery | [SURGERY.md](SURGERY.md) |
-| understand how the pieces fit, read the data files or change the code | this file |
+| If you want to…                                                                                 | read                              |
+| ------------------------------------------------------------------------------------------------ | --------------------------------- |
+| start in the lab                                                                                 | [New here?](#new-here), below      |
+| train a mouse: water restriction, the daily routine, moving through the presets, the experiments | [TRAINING.md](TRAINING.md)         |
+| run a session on the control panel                                                               | [INSTRUCTIONS.md](INSTRUCTIONS.md) |
+| know what a parameter does                                                                       | [PARAMETERS.md](PARAMETERS.md)     |
+| set up, calibrate or fix a rig                                                                   | [HARDWARE.md](HARDWARE.md)         |
+| run opto, masking or ALM control sessions                                                        | [ZAPIT.md](ZAPIT.md)               |
+| do the head-plate surgery                                                                        | [SURGERY.md](SURGERY.md)           |
+| understand how the pieces fit, read the data files or change the code                            | this file                         |
 
 ## New here?
 
 Read in this order:
+
 1. [Access you need](#access-you-need) and [Contacts](#contacts), below.
 2. [TRAINING.md](TRAINING.md): the whole routine, from surgery to the experiments.
 3. [INSTRUCTIONS.md](INSTRUCTIONS.md): the control panel, step by step. Read it before your first session, and try a session in the emulator first; it needs no mouse.
@@ -37,7 +38,7 @@ Read in this order:
 
 ## Contacts
 
-- **Quentin Pajot-Moric** (quentin.pajot-moric.16@ucl.ac.uk): the rig hardware, Zapit and this code.
+- **Quentin Pajot-Moric**: the rig hardware, Zapit and this code.
 
 ## How a session runs
 
@@ -97,6 +98,7 @@ The other task folders in `Protocols/` (`PWM_auditory`, `DMTS`, `Amplitude_Modul
 Setting up a rig PC, calibration and the hardware itself are in [HARDWARE.md](HARDWARE.md).
 
 **Stack.**
+
 - The panel is Python 3.10 with tkinter, pandas/openpyxl, psutil and python-osc. It talks to the running workflow over OSC on port 1334.
 - The task runs in Bonsai 2.7, which saves the workflow as version 2.7.0.
 - Custom operators are written in C#, and the lick/valve board is an Arduino.
@@ -110,21 +112,22 @@ All `Time` columns are **seconds since midnight on the rig PC's clock**, and eve
 
 To analyse sessions, use [behav_utils](https://github.com/serkanshentyurk/behav_utils), which reads these files. It will move to the lab's GitHub along with this repository.
 
-| File | One row per | Columns |
-|---|---|---|
-| `Trial_Summary` | completed trial | 54 columns: trial result, timing, and the session settings repeated on every row |
-| `Session_Parameters` | session (one data row) | every parameter, as name, value, name, value … |
-| `Trial_Epochs` | change of trial phase | `Epoch`, `Time` |
-| `Long_Form_Timestamps` | event | `Label`, `Data`, `Time` |
-| `Detected_Licks` | change of a lick sensor | `State`, `Time`, `Spout` |
-| `Zapit_Timestamps` | message to or from Zapit | `Label`, `Data`, `Time` |
-| `Video_data…`, `Video_timestamps…` | camera frame | camera video and frame times |
+| File                                     | One row per              | Columns                                                                          |
+| ---------------------------------------- | ------------------------ | -------------------------------------------------------------------------------- |
+| `Trial_Summary`                        | completed trial          | 54 columns: trial result, timing, and the session settings repeated on every row |
+| `Session_Parameters`                   | session (one data row)   | every parameter, as name, value, name, value …                                  |
+| `Trial_Epochs`                         | change of trial phase    | `Epoch`, `Time`                                                              |
+| `Long_Form_Timestamps`                 | event                    | `Label`, `Data`, `Time`                                                    |
+| `Detected_Licks`                       | change of a lick sensor  | `State`, `Time`, `Spout`                                                   |
+| `Zapit_Timestamps`                     | message to or from Zapit | `Label`, `Data`, `Time`                                                    |
+| `Video_data…`, `Video_timestamps…` | camera frame             | camera video and frame times                                                     |
 
 ### Reading Trial_Summary
 
 A row is written when a trial ends. A trial cut short by End Session has no row, although its events are still in the other files.
 
 The main columns:
+
 - **Trial and stimulus.** `Trial_Number` and `Stim_Relative` (the stimulus on a −1…+1 scale; 0 is the category boundary).
 - **Response.**
   - `First_Lick` (Left or Right), `Correct` and `Abort_Trial`.
@@ -138,6 +141,7 @@ The main columns:
 - **Repeated session settings.** Durations appear as h:mm:ss text, so `00:00:00.3000000` is 300 ms.
 
 Things to know when analysing it:
+
 - **Response_Latency changed meaning on 5 October 2026.**
   - Files that have a `Window_Open_Time` column use the new meaning: (First_Lick_Time − Window_Open_Time) × 1000, blank on aborts.
   - Older files used a timer that counts in screen frames. It reads 0 when a lick was already in progress as the window opened, and on abort rows it holds the previous trial's value.
@@ -191,6 +195,7 @@ python -m pytest tests
 ```
 
 They read the workflow file directly, with no Bonsai or hardware, and check that:
+
 - every value the workflow reads is written by the panel, for every mouse and rig, and that every panel parameter is read;
 - every Trial_Summary column points at the right value;
 - every data file is closed when a session ends;
