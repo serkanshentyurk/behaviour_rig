@@ -39,7 +39,7 @@ Push Data only copies mice whose nickname starts with the experimenter's initial
 
 ## Surgery
 
-The mice get a head-plate. Mice that will run Zapit sessions also get marks on the skull during the same surgery. See [SURGERY.md](SURGERY.md).
+The mice get the Zapit head-plate surgery: a head-plate, with bregma and a 3 mm reference point marked on the skull for aligning Zapit. Give the mouse unmedicated jelly the day before. See [SURGERY.md](SURGERY.md).
 
 ## From surgery to the first session
 
@@ -50,20 +50,24 @@ The mice get a head-plate. Mice that will run Zapit sessions also get marks on t
 | 5 | **Head-fixing.** As on day 4, but now head-fix the mouse and give it water while it is head-fixed (on a piece of paper, for example), again until it stops drinking. |
 | 6 | **First training session**, with `habituation`. |
 
+The lab's protocol asks for at least 4 days between surgery and the start of water restriction, and 2 days of restriction before training, so that the mouse is motivated.
+
 **Head-fixing.** Weigh the mouse and note the weight. Put it on the rig, hold the head-plate gently and slide it into the groove of the holder. Turn the metal clamp over the groove and tighten its screw by hand until it is firm.
 
 ## Water restriction
 
+- Give every mouse water at least once every 24 hours.
 - Weigh every mouse every day it is on restriction, before any session, and record the weight. Check its general condition at the same time.
-- Its weight must not go below 80% of the start weight. If it does, give it more water until it is back above 80%.
-- On days without training, weekends included, give each mouse 1 minute with the water bottle in its cage, and record it as usual.
+- Its weight must not go below 80% of its baseline weight: the start weight, or the weight on the first restriction day after a break. If it does, give it extra water or wet mash until it is back above 80%. Wet mash works very well, so control the portion.
+- On days without training, give each mouse 1 minute with the water bottle in its cage, or unlimited citric acid water (usually at weekends). Record it as usual.
 - After a session: if the mouse got about 300 correct trials, it has had enough water. Otherwise top it up a little from the bottle; there is no fixed amount.
-- When a mouse comes off restriction, write `break` or `end` in the restriction sheet. At the end of the experiment, take it off restriction and write `end`.
-- How long a mouse may stay on restriction, and when it needs a break, are set by the PPL.
+- Give a break at least every 6 weeks of continuous restriction, with free water for at least 24 hours, and write `break` in the restriction sheet. The weight on the first restriction day after the break is the new baseline.
+- For reference, a mouse drinks about 100 ml/kg a day with free water, and 40–50 ml/kg a day on restriction.
+- The PPL sets the limits; this page doesn't replace it.
 
 ## Every week
 
-- Calibrate water and sound on each rig (see [HARDWARE.md](HARDWARE.md#calibration)).
+- Check the water volume on each rig, and recalibrate if it's off. Once a rig has stayed the same for a couple of weeks, checking once a month is enough. Sound only needs calibrating every 6 months. Both are in [HARDWARE.md](HARDWARE.md#calibration).
 
 ## Every day
 
@@ -138,6 +142,10 @@ After `regular`, the usual order is:
 | `control-alm-bi`, `control-alm-uni` | Zapit on 30% of trials at ALM: both sides, or the right side only | 31108 |
 
 Which Zapit configuration goes with each preset is in [ZAPIT.md](ZAPIT.md#configurations). The opto and masking presets all use Zapit, so for now they only run on 31108. 31101 and 31102 have fibre optogenetics, but there are no fibre presets yet.
+
+## At the end of the experiment
+
+Take the mouse off restriction and write `end` in the restriction sheet. If the experiment needs the brains, the perfusion protocol is in [PERFUSION.md](PERFUSION.md).
 
 ## Changing or adding presets
 

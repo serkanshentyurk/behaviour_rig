@@ -4,28 +4,28 @@ Software for running head-fixed mouse auditory-behaviour experiments on the trai
 
 This is lab instrumentation. It drives specific hardware on specific Windows PCs and is not meant to run anywhere else.
 
-| If you want to…                                                                                 | read                              |
-| ------------------------------------------------------------------------------------------------ | --------------------------------- |
-| start in the lab                                                                                 | [New here?](#new-here), below      |
-| train a mouse: water restriction, the daily routine, moving through the presets, the experiments | [TRAINING.md](TRAINING.md)         |
-| run a session on the control panel                                                               | [INSTRUCTIONS.md](INSTRUCTIONS.md) |
-| know what a parameter does                                                                       | [PARAMETERS.md](PARAMETERS.md)     |
-| set up, calibrate or fix a rig                                                                   | [HARDWARE.md](HARDWARE.md)         |
-| run opto, masking or ALM control sessions                                                        | [ZAPIT.md](ZAPIT.md)               |
-| do the head-plate surgery                                                                        | [SURGERY.md](SURGERY.md)           |
-| understand how the pieces fit, read the data files or change the code                            | this file                         |
+| If you want to… | read |
+|---|---|
+| start in the lab | [New here?](#new-here), below |
+| train a mouse: water restriction, the daily routine, moving through the presets, the experiments | [TRAINING.md](TRAINING.md) |
+| run a session on the control panel | [INSTRUCTIONS.md](INSTRUCTIONS.md) |
+| know what a parameter does | [PARAMETERS.md](PARAMETERS.md) |
+| set up, calibrate or fix a rig | [HARDWARE.md](HARDWARE.md) |
+| run opto, masking or ALM control sessions | [ZAPIT.md](ZAPIT.md) |
+| do the head-plate surgery | [SURGERY.md](SURGERY.md) |
+| perfuse a mouse at the end of an experiment | [PERFUSION.md](PERFUSION.md) |
+| understand how the pieces fit, read the data files or change the code | this file |
 
 ## New here?
 
 Read in this order:
-
 1. [Access you need](#access-you-need) and [Contacts](#contacts), below.
 2. [TRAINING.md](TRAINING.md): the whole routine, from surgery to the experiments.
 3. [INSTRUCTIONS.md](INSTRUCTIONS.md): the control panel, step by step. Read it before your first session, and try a session in the emulator first; it needs no mouse.
 4. [HARDWARE.md](HARDWARE.md): what is on the rigs, and fixes for the common problems.
 5. Before any opto, masking or ALM control session: [ZAPIT.md](ZAPIT.md).
 
-[PARAMETERS.md](PARAMETERS.md) is the reference for every setting, and [SURGERY.md](SURGERY.md) covers the head-plate surgery.
+[PARAMETERS.md](PARAMETERS.md) is the reference for every setting; [SURGERY.md](SURGERY.md) covers the head-plate surgery and [PERFUSION.md](PERFUSION.md) the perfusion at the end of an experiment.
 
 ## Access you need
 
@@ -38,7 +38,7 @@ Read in this order:
 
 ## Contacts
 
-- **Quentin Pajot-Moric**: the rig hardware, Zapit and this code.
+- **Quentin Pajot-Moric** (quentin.pajot-moric.16@ucl.ac.uk): the rig hardware, Zapit and this code.
 
 ## How a session runs
 
@@ -98,7 +98,6 @@ The other task folders in `Protocols/` (`PWM_auditory`, `DMTS`, `Amplitude_Modul
 Setting up a rig PC, calibration and the hardware itself are in [HARDWARE.md](HARDWARE.md).
 
 **Stack.**
-
 - The panel is Python 3.10 with tkinter, pandas/openpyxl, psutil and python-osc. It talks to the running workflow over OSC on port 1334.
 - The task runs in Bonsai 2.7, which saves the workflow as version 2.7.0.
 - Custom operators are written in C#, and the lick/valve board is an Arduino.
@@ -112,22 +111,21 @@ All `Time` columns are **seconds since midnight on the rig PC's clock**, and eve
 
 To analyse sessions, use [behav_utils](https://github.com/serkanshentyurk/behav_utils), which reads these files. It will move to the lab's GitHub along with this repository.
 
-| File                                     | One row per              | Columns                                                                          |
-| ---------------------------------------- | ------------------------ | -------------------------------------------------------------------------------- |
-| `Trial_Summary`                        | completed trial          | 54 columns: trial result, timing, and the session settings repeated on every row |
-| `Session_Parameters`                   | session (one data row)   | every parameter, as name, value, name, value …                                  |
-| `Trial_Epochs`                         | change of trial phase    | `Epoch`, `Time`                                                              |
-| `Long_Form_Timestamps`                 | event                    | `Label`, `Data`, `Time`                                                    |
-| `Detected_Licks`                       | change of a lick sensor  | `State`, `Time`, `Spout`                                                   |
-| `Zapit_Timestamps`                     | message to or from Zapit | `Label`, `Data`, `Time`                                                    |
-| `Video_data…`, `Video_timestamps…` | camera frame             | camera video and frame times                                                     |
+| File | One row per | Columns |
+|---|---|---|
+| `Trial_Summary` | completed trial | 54 columns: trial result, timing, and the session settings repeated on every row |
+| `Session_Parameters` | session (one data row) | every parameter, as name, value, name, value … |
+| `Trial_Epochs` | change of trial phase | `Epoch`, `Time` |
+| `Long_Form_Timestamps` | event | `Label`, `Data`, `Time` |
+| `Detected_Licks` | change of a lick sensor | `State`, `Time`, `Spout` |
+| `Zapit_Timestamps` | message to or from Zapit | `Label`, `Data`, `Time` |
+| `Video_data…`, `Video_timestamps…` | camera frame | camera video and frame times |
 
 ### Reading Trial_Summary
 
 A row is written when a trial ends. A trial cut short by End Session has no row, although its events are still in the other files.
 
 The main columns:
-
 - **Trial and stimulus.** `Trial_Number` and `Stim_Relative` (the stimulus on a −1…+1 scale; 0 is the category boundary).
 - **Response.**
   - `First_Lick` (Left or Right), `Correct` and `Abort_Trial`.
@@ -141,7 +139,6 @@ The main columns:
 - **Repeated session settings.** Durations appear as h:mm:ss text, so `00:00:00.3000000` is 300 ms.
 
 Things to know when analysing it:
-
 - **Response_Latency changed meaning on 5 October 2026.**
   - Files that have a `Window_Open_Time` column use the new meaning: (First_Lick_Time − Window_Open_Time) × 1000, blank on aborts.
   - Older files used a timer that counts in screen frames. It reads 0 when a lick was already in progress as the window opened, and on abort rows it holds the previous trial's value.
@@ -195,7 +192,6 @@ python -m pytest tests
 ```
 
 They read the workflow file directly, with no Bonsai or hardware, and check that:
-
 - every value the workflow reads is written by the panel, for every mouse and rig, and that every panel parameter is read;
 - every Trial_Summary column points at the right value;
 - every data file is closed when a session ends;
@@ -215,7 +211,7 @@ They can't tell you whether Bonsai builds and runs the workflow. For that, open 
 
 ## Known issues
 
-These are current as of 22 October 2026.
+These are current as of 31 October 2026.
 
 - **Right valve time, fixed on 5 October 2026 for `SOUND_CAT`.** Before that, every right reward opened the right valve for `Left_Valve_Time`. On 31104 and 31105 the right spout was open about 26% longer than its calibration; on the other rigs the difference was under 5%. Each session's `Session_Parameters` records its `Rig_ID`. `PRO_ANTI` still opens the right valve for `Left_Valve_Time`; that is left for the protocol's owner to change.
 - **Trial 1 timing is unreliable.** Ignore trial 1 in analysis.
@@ -228,3 +224,4 @@ These are current as of 22 October 2026.
 - **Lick times lag on Arduino rigs** by about 25 ms, because the serial link runs at 9600 baud.
 - **Masking and opto sessions look identical** in the data except for `Session_Type`. The laser power is set in Zapit.
 - **Harp behaviour boards sometimes switch their valve outputs to pulse mode** on their own. The valves then only open for an instant, so little or no water comes out, in Flush Rig or a session. Why is not known; the fix is a setting in the Harp Behaviour app ([HARDWARE.md](HARDWARE.md#the-harp-behaviour-app)).
+- **The calibration workflows point at an old port and an old location.** The Harp water calibration has `COM4` written in, and the sound calibration reads the sound card's port from the repository's old folder (`Desktop\HeadFixedBehavior`). Each needs one setting changed before use; see [HARDWARE.md](HARDWARE.md#calibration).

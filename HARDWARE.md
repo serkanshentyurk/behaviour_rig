@@ -5,23 +5,25 @@ What is on the rigs in room 311, how to set up a rig PC, calibration, and what t
 ## What each rig has
 
 Every rig has:
-- a PC in the room, with one account; the password is the user name;
+- a PC in the room, with one account; the password is the user name. The repository is at `C:\Users\MouseRoom\Desktop\BehaviourRig`;
 - a Harp sound card and a speaker;
 - two lick spouts, each with a touch sensor and a water valve, fed from a 20 ml syringe. Each sensor has a light that comes on when the spout is touched;
 - a board for the sensors and valves: a Harp behaviour board or an Arduino Nano;
 - a camera.
 
-Left and right always mean the mouse's left and right.
+Left and right always mean the mouse's left and right; valve 1 is the left spout and valve 2 the right. The rigs are numbered 31101–31109; older notes, including the lab's protocols, call them rigs 1–9.
 
-| Rig | Sensors and valves | Optogenetics |
-|---|---|---|
-| 31101 | Harp behaviour board | fibre, with masking light |
-| 31102 | Harp behaviour board | fibre, with masking light |
-| 31104 | Arduino | none |
-| 31105 | Arduino | none yet: Zapit is planned and the equipment is ready |
-| 31107 | Arduino | none |
-| 31108 | Arduino | Zapit, with masking light |
-| 31109 | Arduino | none |
+| Rig | Sensors and valves | Optogenetics | Status (October 2026) |
+|---|---|---|---|
+| 31101 | Harp behaviour board | fibre, with masking light | in use |
+| 31102 | Harp behaviour board | fibre, with masking light | in use |
+| 31103 | Harp behaviour board | none | has a problem; not in `Rigs.csv` |
+| 31104 | Arduino | none | in use |
+| 31105 | Arduino | none yet: Zapit is planned and the equipment is ready | in use |
+| 31106 | Arduino | none | not working; not in `Rigs.csv` |
+| 31107 | Arduino | none | in use |
+| 31108 | Arduino | Zapit, with masking light | in use |
+| 31109 | Arduino | none | in use |
 
 The masking light, and the fibre light on 31101 and 31102, are driven by a second Arduino (an Arduino Mega); Zapit takes its commands from the task workflow directly. Only the opto rigs have a masking light, so only they can run masking sessions. The masking light needs no settings.
 
@@ -62,7 +64,7 @@ The rigs with a Harp behaviour board (31101, 31102) have the **Harp Behaviour** 
 
    This list is taken from the workflow file's namespace declarations. Opening the workflow once in the editor shows any that are missing.
 2. **Miniconda or Anaconda** in the user folder (`%USERPROFILE%\miniconda3` or `anaconda3`; the launcher looks there). Then run `conda env create -f GUI/GUI_env.yml` to create `gui_env`.
-3. **Git** on the PATH, and the repository cloned on the PC.
+3. **Git** on the PATH, and the repository cloned to `C:\Users\MouseRoom\Desktop\BehaviourRig`.
 4. **Register the rig.**
    - Add a row to `Params/Rigs.csv`, with the PC's Windows computer name in `Hostname`, then commit and push.
    - On the PC, create `C:\ProgramData\MouseRoom\rig.json` containing `{"rig": "<id>"}`.
@@ -71,14 +73,61 @@ The rigs with a Harp behaviour board (31101, 31102) have the **Harp Behaviour** 
 
 ## Calibration
 
-Water calibration sets each valve's opening time (`Left_Valve_Time`, `Right_Valve_Time`); sound calibration sets `Speaker_Slope` and `Speaker_Y_Intercept`. Both go into the rig's row of `Params/Rigs.csv`, as a change in the repository. Calibrate every week, with a full syringe.
+Water calibration sets each valve's opening time (`Left_Valve_Time`, `Right_Valve_Time`); sound calibration sets `Speaker_Slope` and `Speaker_Y_Intercept`. New values go into the rig's row of `Params/Rigs.csv`, in the repository on your own computer: run the tests, commit and push, and the rig picks them up the next time its launcher starts. The rig's own `Params\Rig_Params.csv`, which older notes call `rig_params`, is rewritten from `Rigs.csv` every time the panel starts, so editing it has no lasting effect.
 
-**The procedures are not written yet.** They will come from the water and sound calibration protocols. What exists so far:
+The calibration workflows still point at an old port and an old location, so each needs one setting changed in the editor before you run it (below). The launcher resets the repository the next time it starts, which undoes these edits, so you make them each time.
 
-- Water: `Protocols/Water_calibration/Manual_Calibration_Arduino.bonsai` (Arduino rigs) or `Manual_Calibration_Harp.bonsai` (Harp rigs), with `Water_Calib_Plots.ipynb`.
-- Sound: `Protocols/Sound_Calibration/WN_Volume_Calibration.bonsai` and `Test_Volume_Cal.bonsai`, with `Vol_Calib_Plots.ipynb`.
+### Water
 
-These workflows predate the current folder layout, and the panel does not run them. Check their file paths and ports in the editor before using one: the sound workflows read `Rig_Params.csv` from `C:\Users\MouseRoom\Desktop\HeadFixedBehavior\Params\` or `C:\Users\Psychophysics\Desktop\HeadFixedBehavior\Params\`, `Manual_Calibration_Arduino.bonsai` reads `../../Params/Rig_Params.csv`, and `Manual_Calibration_Harp.bonsai` has `COM4` written in.
+The aim is 5 µl per opening, from each spout.
+
+**When.** Check every week. Once a rig has stayed the same for a couple of weeks, checking once a month is enough. Check again after anything changes on the water side, such as tubing, a valve or the spouts, and recalibrate only when a check is off.
+
+**You need** a high-precision scale (not the one for weighing mice), a weighing dish, a Kimwipe, and an empty camera box or anything about 20 cm tall with a flat top.
+
+**Setting up**
+1. Flush the rig and fill the syringe to 20 ml.
+2. Open the calibration workflow in the Bonsai editor:
+   - **Harp rigs** (Arduino FALSE in `Rigs.csv`): `Protocols\Water_calibration\Manual_Calibration_Harp.bonsai`. It has `COM4` written in: select the Behavior node and set its port to the rig's `Harp_Beh_Port`, or no water comes out.
+   - **Arduino rigs:** `Protocols\Water_calibration\Manual_Calibration_Arduino.bonsai`. It reads the Arduino's port from `..\..\Params\Rig_Params.csv`; if its serial port shows an error, set the port to the rig's `Arduino_Port` by hand.
+3. The settings on the right are **Count**, the number of openings (200; leave it), **ValveNumber**, 1 for the left spout or 2 for the right, and **ValveTime**, the opening time in ms.
+
+**Checking the current valve times**
+1. Look up the rig's `Left_Valve_Time` and `Right_Valve_Time` in `Rigs.csv`, and enter the one for the spout you are testing as ValveTime.
+2. Fold a Kimwipe into a shape that stays put between the two spouts, put it on the weighing dish, and zero the scale with both on it.
+3. Put the box under the spouts and the dish on top, with the Kimwipe touching the spouts so it catches all the water:
+
+   <img src="docs/images/water_calibration.jpg" alt="A weighing dish with a folded Kimwipe on an empty camera box, the Kimwipe touching both lick spouts" width="300">
+
+4. Press start (▷). The valve opens 200 times.
+5. Weigh the dish and the Kimwipe again and record it.
+6. Do this twice for each spout and take the average; if the two runs differ a lot, do a third. Top up the syringe between runs as needed.
+7. Volume per opening in µl = weight in g × 1000 / 200 (taking 1 g as 1 ml).
+
+The rig needs recalibrating if a spout gives under 4.5 or over 5.5 µl, or the two spouts differ by more than 0.5 µl.
+
+**Recalibrating**
+1. Taking the volume to be proportional to the valve time, new ValveTime = current ValveTime × 5 / measured µl. For example, if 80 ms gives 4 µl, try 100 ms.
+2. Test the new value as above, and adjust until it gives 5 µl.
+3. Put the new values in the rig's row of `Rigs.csv`, as described at the top of this section.
+
+The lab's older method (five valve times, three runs each, and a fitted line) may be slightly more accurate, but takes 1–2 hours per rig and is no longer used.
+
+### Sound
+
+The aim is that the speaker plays the levels the task asks for.
+
+**When.** Every 6 months, as the lab's protocol recommends, and after a speaker or sound card is changed.
+
+**You need** the sound meter (usually in the Akrami lab workshop), and paper and a pen.
+
+1. Open `Protocols\Sound_Calibration\WN_Volume_Calibration.bonsai` in the Bonsai editor.
+2. Set the sound card's port. The workflow reads it from `C:\Users\MouseRoom\Desktop\HeadFixedBehavior\Params\Rig_Params.csv`, the repository's old location. Change that file name in the node that reads it to `C:\Users\MouseRoom\Desktop\BehaviourRig\Params\Rig_Params.csv`, or set the sound card node's port to the rig's `Sound_Card_Port` from `Rigs.csv`. If an old `HeadFixedBehavior` folder is still on the PC, the workflow takes a port from there without any error, so do this either way.
+3. On the right, check that Amplification is set to min 45 and max 100.
+4. Put the sound meter in the rig, with its microphone about where a head-fixed mouse's ears would be.
+5. Press start (▷). The workflow plays a sound 11 times, at 50 to 100 dB in steps of 5. Record the meter's reading each time. On some rigs the first two or three are too quiet to measure; leave those out.
+6. Fit a straight line of the measured level against the level played. Its slope and intercept are `Speaker_Slope` and `Speaker_Y_Intercept`; the panel uses them to turn each level the task asks for into a sound-card setting, as (dB − intercept) / slope.
+7. Put them in the rig's row of `Rigs.csv`, as described at the top of this section.
 
 ## When something stops working
 
@@ -86,6 +135,7 @@ These workflows predate the current folder layout, and the panel does not run th
 |---|---|
 | Bonsai won't start, with an error about a COM or serial port | the ports have probably changed: see [COM ports](#com-ports) |
 | No water during Flush Rig or a session, on a Harp rig | the pulse setting: see [The Harp Behaviour app](#the-harp-behaviour-app) |
+| No water from the Harp water calibration workflow | set its Behavior node's port: see [Water](#water) |
 | Air in the tubes | keep flushing until it is gone |
 | The sound card stops responding | switch it off and on again (see the README, Known issues, on the go-cue tone) |
 | Zapit misbehaves | see [ZAPIT.md](ZAPIT.md#when-something-goes-wrong) |

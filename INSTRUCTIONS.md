@@ -81,6 +81,7 @@ Field colours: after Load, blue fields come from the mouse's preset and yellow f
 
 7. **Ending the session.**
    - Press **End Session**. The trial in progress is abandoned (it won't appear in Trial_Summary), the valves close, Zapit is told to stop, and the data files are closed about 2 seconds later.
+   - In a Zapit session, press End Session at a moment when the laser and the masking light are off ([ZAPIT.md](ZAPIT.md#during-and-after-the-session)).
    - The status line then says "Session ended - press Kill Bonsai". Press **Kill Bonsai** to close Bonsai.
    - If you press Kill Bonsai without End Session, it sends End Session itself and waits about 4 seconds before closing Bonsai.
    - **Never close Bonsai any other way during a session** (window X, Task Manager, shutting the PC down). The end of every data file is lost.
