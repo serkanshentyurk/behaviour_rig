@@ -18,7 +18,8 @@ This is lab instrumentation. It drives specific hardware on specific Windows PCs
 
 ## New here?
 
-Read in this order:
+For the project as a whole (the analysis, your data folder on ceph, who to ask), start with `START_HERE.md`
+in the `sound_categorisation` repository. For the rig, read in this order:
 
 1. [Access you need](#access-you-need) and [Contacts](#contacts), below.
 2. [TRAINING.md](TRAINING.md): the whole routine, from surgery to the experiments.
@@ -40,6 +41,9 @@ Read in this order:
 ## Contacts
 
 - **Quentin Pajot-Moric**: the rig hardware, Zapit and this code.
+- **Serkan Shentyurk**: this code and the analysis of its data.
+- **Lillianne Teachen**, or other lab members: other access.
+- The `#ithpc` Slack channel: the cluster and computing.
 
 ## How a session runs
 
@@ -216,7 +220,9 @@ They can't tell you whether Bonsai builds and runs the workflow. For that, open 
 
 ## Known issues
 
-These are current as of 31 October 2026.
+These are current as of 31 October 2026. Data recorded before 5 October 2026 carry the faults fixed that day.
+The analysis keeps those sessions and states it as a caveat: the same mouse ran on different rigs on
+different days, so there is no per-rig correction.
 
 - **Right valve time, fixed on 5 October 2026 for `SOUND_CAT`.** Before that, every right reward opened the right valve for `Left_Valve_Time`. On 31104 and 31105 the right spout was open about 26% longer than its calibration; on the other rigs the difference was under 5%. Each session's `Session_Parameters` records its `Rig_ID`. `PRO_ANTI` still opens the right valve for `Left_Valve_Time`; that is left for the protocol's owner to change.
 - **Trial 1 timing is unreliable.** Ignore trial 1 in analysis.
