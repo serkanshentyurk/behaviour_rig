@@ -16,11 +16,10 @@ from dataclasses import dataclass
 from pathlib import Path
 from tkinter import messagebox, ttk
 
-import psutil
-from pythonosc.udp_client import SimpleUDPClient
-
 import params_io
+import psutil
 import push_data
+from pythonosc.udp_client import SimpleUDPClient
 
 # ================================================================ paths and constants
 GUI_DIR = Path(__file__).resolve().parent

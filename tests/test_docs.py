@@ -10,7 +10,7 @@ import numpy as np
 
 REPO = Path(__file__).resolve().parents[1]
 sys.path.insert(0, str(REPO / 'GUI'))
-import params_io  # noqa: E402
+import params_io
 
 DOC = REPO / 'PARAMETERS.md'
 

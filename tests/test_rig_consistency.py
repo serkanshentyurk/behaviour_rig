@@ -13,7 +13,7 @@ import pytest
 
 REPO = Path(__file__).resolve().parents[1]
 sys.path.insert(0, str(REPO / 'GUI'))
-import params_io  # noqa: E402
+import params_io
 
 WORKFLOW = REPO / 'Protocols' / 'Auditory_discrimination' / 'Sound_Cat_V2.bonsai'
 LAYOUT = WORKFLOW.with_name(WORKFLOW.name + '.layout')          # what Bonsai 2.7 reads

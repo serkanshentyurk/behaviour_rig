@@ -13,8 +13,8 @@ import pytest
 
 REPO = Path(__file__).resolve().parents[1]
 sys.path.insert(0, str(REPO / 'GUI'))
-import params_io  # noqa: E402
-import push_data  # noqa: E402
+import params_io
+import push_data
 
 XLSX = REPO / 'Params' / 'Mouse_Room_Params.xlsx'
 PRESETS = REPO / 'Params' / 'Presets.csv'
