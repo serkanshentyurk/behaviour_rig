@@ -477,7 +477,7 @@ def process(value):
         <Name>ValveNumber</Name>
       </Expression>
       <Expression xsi:type="ExternalizedMapping">
-        <Property Name="Value" DisplayName="ValveTime(ms)" />
+        <Property Name="Value" DisplayName="ValveTime" />
       </Expression>
       <Expression xsi:type="Combinator">
         <Combinator xsi:type="FloatProperty">

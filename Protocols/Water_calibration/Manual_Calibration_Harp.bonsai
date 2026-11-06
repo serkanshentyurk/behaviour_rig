@@ -21,11 +21,11 @@
         <Name>ValveNumber</Name>
       </Expression>
       <Expression xsi:type="ExternalizedMapping">
-        <Property Name="Value" DisplayName="ValveTime(ms)" />
+        <Property Name="Value" DisplayName="ValveTime" />
       </Expression>
       <Expression xsi:type="Combinator">
         <Combinator xsi:type="FloatProperty">
-          <Value>100</Value>
+          <Value>30</Value>
         </Combinator>
       </Expression>
       <Expression xsi:type="scr:ExpressionTransform">
@@ -200,6 +200,9 @@
       <Expression xsi:type="rx:BehaviorSubject">
         <Name>Out</Name>
       </Expression>
+      <Expression xsi:type="ExternalizedMapping">
+        <Property Name="PortName" />
+      </Expression>
     </Nodes>
     <Edges>
       <Edge From="0" To="1" Label="Source1" />
@@ -242,6 +245,7 @@
       <Edge From="34" To="35" Label="Source1" />
       <Edge From="35" To="36" Label="Source1" />
       <Edge From="37" To="38" Label="Source1" />
+      <Edge From="39" To="8" Label="Source2" />
     </Edges>
   </Workflow>
 </WorkflowBuilder>

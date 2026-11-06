@@ -85,31 +85,22 @@ The aim is 5 µl per opening, from each spout.
 
 **You need** a high-precision scale (not the one for weighing mice), a weighing dish, a Kimwipe, and an empty camera box or anything about 20 cm tall with a flat top.
 
-**Setting up**
-1. Flush the rig and fill the syringe to 20 ml.
-2. Open the calibration workflow in the Bonsai editor:
-   - **Harp rigs** (Arduino FALSE in `Rigs.csv`): `Protocols\Water_calibration\Manual_Calibration_Harp.bonsai`. It has `COM4` written in: select the Behavior node and set its port to the rig's `Harp_Beh_Port`, or no water comes out.
-   - **Arduino rigs:** `Protocols\Water_calibration\Manual_Calibration_Arduino.bonsai`. It reads the Arduino's port from `..\..\Params\Rig_Params.csv`; if its serial port shows an error, set the port to the rig's `Arduino_Port` by hand.
-3. The settings on the right are **Count**, the number of openings (200; leave it), **ValveNumber**, 1 for the left spout or 2 for the right, and **ValveTime**, the opening time in ms.
-
-**Checking the current valve times**
-1. Look up the rig's `Left_Valve_Time` and `Right_Valve_Time` in `Rigs.csv`, and enter the one for the spout you are testing as ValveTime.
-2. Fold a Kimwipe into a shape that stays put between the two spouts, put it on the weighing dish, and zero the scale with both on it.
-3. Put the box under the spouts and the dish on top, with the Kimwipe touching the spouts so it catches all the water:
+**Checking, with the Calibrate button.** Flush the rig and fill the syringe to 20 ml. Then press **Calibrate** on the Setup tab of the panel and follow the window:
+1. It shows the rig's `Left_Valve_Time` and `Right_Valve_Time` from `Rigs.csv`. Press Start.
+2. For each run it asks you to set up the dish: fold a Kimwipe into a shape that stays put between the two spouts, put it on the weighing dish, zero the scale with both on it, and put the dish on the box with the Kimwipe touching the spouts so it catches all the water:
 
    <img src="docs/images/water_calibration.jpg" alt="A weighing dish with a folded Kimwipe on an empty camera box, the Kimwipe touching both lick spouts" width="300">
 
-4. Press start (▷). The valve opens 200 times.
-5. Weigh the dish and the Kimwipe again and record it.
-6. Do this twice for each spout and take the average; if the two runs differ a lot, do a third. Top up the syringe between runs as needed.
-7. Volume per opening in µl = weight in g × 1000 / 200 (taking 1 g as 1 ml).
+3. Press Run. The valve opens 200 times, once a second (about 3.5 min); Bonsai closes by itself.
+4. Weigh the dish with the Kimwipe and type the weight in g, as the scale shows it (0.27, not 27). Top up the syringe between runs if it needs it.
+5. It runs left, right, left, right, and offers a third run for a spout whose two runs differ by more than 10 %.
+6. At the end it shows the volume per opening of each spout (weight in g × 1000 / 200, taking 1 g as 1 ml).
 
-The rig needs recalibrating if a spout gives under 4.5 or over 5.5 µl, or the two spouts differ by more than 0.5 µl.
+The rig needs recalibrating if a spout gives under 4.5 or over 5.5 µl, or the two spouts differ by more than 0.5 µl. The window then suggests new valve times (taking the volume to be proportional to the valve time: new time = current time × 5 / measured µl; if 80 ms gives 4 µl, 100 ms). Press **Test these times** to run the check again with them, until both spouts are in range. The window then shows the values to put in the rig's row of `Rigs.csv`, as described at the top of this section; it does not change `Rigs.csv` itself. Every run is logged in `Data\calibration\water_calibration.csv` on the rig PC.
 
-**Recalibrating**
-1. Taking the volume to be proportional to the valve time, new ValveTime = current ValveTime × 5 / measured µl. For example, if 80 ms gives 4 µl, try 100 ms.
-2. Test the new value as above, and adjust until it gives 5 µl.
-3. Put the new values in the rig's row of `Rigs.csv`, as described at the top of this section.
+Testing far from the current time (for example at 30 ms to save water) makes the suggestion an extrapolation: a valve does not deliver exactly in proportion at short openings. Always test a suggested time before it goes into `Rigs.csv`.
+
+**By hand, in the Bonsai editor.** Open `Protocols\Water_calibration\Manual_Calibration_Harp.bonsai` on Harp rigs (Arduino FALSE in `Rigs.csv`) or `Manual_Calibration_Arduino.bonsai` on Arduino rigs. Set **PortName** to the rig's `Harp_Beh_Port` (Harp; the Arduino version reads its port from `..\..\Params\Rig_Params.csv`), **ValveNumber** to 1 for the left spout or 2 for the right, **ValveTime** to the opening time in ms (30 until you set it), and leave **Count** at 200. Press start (▷), then weigh as above.
 
 The lab's older method (five valve times, three runs each, and a fitted line) may be slightly more accurate, but takes 1–2 hours per rig and is no longer used.
 

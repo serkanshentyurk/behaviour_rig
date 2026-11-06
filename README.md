@@ -235,4 +235,4 @@ different days, so there is no per-rig correction.
 - **Lick times lag on Arduino rigs** by about 25 ms, because the serial link runs at 9600 baud.
 - **Masking and opto sessions look identical** in the data except for `Session_Type`. The laser power is set in Zapit.
 - **Harp behaviour boards sometimes switch their valve outputs to pulse mode** on their own. The valves then only open for an instant, so little or no water comes out, in Flush Rig or a session. Why is not known; the fix is a setting in the Harp Behaviour app ([HARDWARE.md](HARDWARE.md#the-harp-behaviour-app)).
-- **The calibration workflows point at an old port and an old location.** The Harp water calibration has `COM4` written in, and the sound calibration reads the sound card's port from the repository's old folder (`Desktop\HeadFixedBehavior`). Each needs one setting changed before use; see [HARDWARE.md](HARDWARE.md#calibration).
+- **The sound calibration workflow points at an old location.** It reads the sound card's port from the repository's old folder (`Desktop\HeadFixedBehavior`), so it needs one setting changed before use; see [HARDWARE.md](HARDWARE.md#sound).

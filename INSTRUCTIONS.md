@@ -103,7 +103,8 @@ Field colours: after Load, blue fields come from the mouse's preset and yellow f
 | **Flush Rig** | starts the water-line flushing workflow (`Params\Flush_Rig.bonsai` on Arduino rigs, `Params\Flush_Rig_Harp.bonsai` on Harp rigs); press again to stop it |
 | **Camera** | starts a live camera preview (`Params\Camera.bonsai`); press again to stop it. Stop it before launching a session, which uses the camera itself |
 | **Edit Workflow** | opens the task workflow in the Bonsai editor, set up so its file paths work; for looking at or changing the workflow (read the README first) |
-| **Test Speakers**, **Calibrate** | not implemented (greyed out) |
+| **Calibrate** | water calibration, step by step: each spout opens 200 times, you type in the weight after each run, and it shows whether the valve times in `Rigs.csv` need changing and to what ([HARDWARE.md](HARDWARE.md#water)) |
+| **Test Speakers** | not implemented (greyed out) |
 
 **Kill Bonsai** closes every Bonsai window on the PC, including an editor opened with Edit Workflow. Save any work in the editor first.
 

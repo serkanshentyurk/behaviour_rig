@@ -16,10 +16,12 @@ from dataclasses import dataclass
 from pathlib import Path
 from tkinter import messagebox, ttk
 
-import params_io
 import psutil
-import push_data
 from pythonosc.udp_client import SimpleUDPClient
+
+import params_io
+import push_data
+import water_calibration
 
 # ================================================================ paths and constants
 GUI_DIR = Path(__file__).resolve().parent
@@ -36,6 +38,7 @@ RIG_PARAMS_CSV = REPO / 'Params' / 'Rig_Params.csv'           # written here, re
 EXPERIMENTERS_DIR = GUI_DIR / 'paths'
 DATA_DIR = REPO / 'Data'
 RIG_JSON = Path(r'C:\ProgramData\MouseRoom\rig.json')         # {"rig": "<id>"}, one per rig PC
+CALIBRATION_LOG = DATA_DIR / 'calibration' / 'water_calibration.csv'   # every calibration run, kept on this PC
 BONSAI_EXE = Path.home() / 'AppData' / 'Local' / 'Bonsai' / 'Bonsai.exe'
 
 # Bonsai resolves the workflow's relative paths (..\Params\..., Extensions\..., ../Data) against
@@ -373,6 +376,230 @@ def open_in_editor():
 
 
 # ================================================================ Push Data
+# ================================================================ water calibration (Calibrate)
+CALIBRATION_STARTUP_S = 60          # Bonsai's start-up and margin, before a run counts as overdue
+
+
+class CalibrationWizard:
+    """HARDWARE.md, "Water", one step at a time: each spout opens 200 times (left, right, left, right),
+    the weight is typed in after each run, and the end shows the valve times for Params/Rigs.csv.
+    The arithmetic is in water_calibration.py."""
+
+    def __init__(self, master):
+        self.rig = RIG
+        self.harp_port = None if params_io.uses_arduino(RIG) else RIG.get('Harp_Beh_Port')
+        self.workflow = water_calibration.workflow_for(RIG, REPO)
+        self.win = tk.Toplevel(master)
+        self.win.title(f"Water calibration - rig {RIG['rig']}")
+        self.win.config(**bg(CARD))
+        self.win.geometry('640x480')
+        self.win.protocol('WM_DELETE_WINDOW', self.close)
+        self.body = tk.Frame(self.win, **bg(CARD))
+        self.body.pack(fill='both', expand=True, padx=20, pady=20)
+        self.proc, self.started, self.spouts, self.plan = None, None, {}, []
+        self.intro()
+
+    # ---- building blocks
+    def clear(self):
+        self.win.unbind('<Return>')
+        for widget in self.body.winfo_children():
+            widget.destroy()
+
+    def say(self, message, colour=COL_ACCENT):
+        tk.Label(self.body, text=message, font=FONT_UI, fg=colour, justify='left', wraplength=580,
+                 anchor='w', **bg(CARD)).pack(anchor='w', pady=(0, 10))
+
+    def buttons(self, *specs):
+        row = tk.Frame(self.body, **bg(CARD))
+        row.pack(anchor='w', pady=(10, 0))
+        for label, command, colour in specs:
+            button = make_button(row, label, command, width=15)
+            paint_button(button, colour)
+            button.pack(side='left', padx=(0, 10))
+
+    def runs_done(self):
+        return sum(len(s.grams) for s in self.spouts.values())
+
+    # ---- the steps
+    def intro(self, times=None):
+        self.clear()
+        board = 'Arduino' if params_io.uses_arduino(self.rig) else 'Harp'
+        minutes = water_calibration.expected_seconds() / 60
+        self.say(f"Rig {self.rig['rig']} ({board} valves). Each run opens one spout "
+                 f"{water_calibration.COUNT} times, about {minutes:.1f} min; {water_calibration.RUNS_PER_SPOUT} "
+                 "runs per spout, left and right in turn.\n\nBefore you start: flush the rig, fill the syringe "
+                 "to 20 ml, and have the scale, a weighing dish, a Kimwipe and the box ready (HARDWARE.md, Water).")
+        grid = tk.Frame(self.body, **bg(CARD))
+        grid.pack(anchor='w')
+        self.entries = {}
+        for row, (spout, (_, column)) in enumerate(water_calibration.SPOUTS.items()):
+            tk.Label(grid, text=f'{spout.capitalize()} valve time (ms):', font=FONT_UI, fg=COL_ACCENT,
+                     **bg(CARD)).grid(row=row, column=0, sticky='e', padx=(0, 10), pady=4)
+            value = (times or {}).get(column, self.rig.get(column, ''))
+            self.entries[spout] = tk.StringVar(value=str(value))
+            tk.Entry(grid, textvariable=self.entries[spout], width=8, font=FONT_UI).grid(row=row, column=1, sticky='w')
+        self.say("Filled in from this rig's row of Rigs.csv; type other times to test them.", COL_MUTE)
+        self.buttons(('Start', self.start, COL_OK), ('Cancel', self.close, COL_IDLE))
+
+    def start(self):
+        times = {}
+        for spout, var in self.entries.items():
+            try:
+                times[spout] = float(var.get().replace(',', '.'))
+            except ValueError:
+                times[spout] = 0
+            if not 0 < times[spout] < 1000:
+                warn(f'The {spout} valve time must be a number of ms between 0 and 1000.')
+                return
+        self.spouts = {spout: water_calibration.Spout(spout, ms) for spout, ms in times.items()}
+        self.plan = water_calibration.run_plan()
+        self.next_run()
+
+    def next_run(self):
+        if not self.plan:
+            self.results()
+            return
+        spout = self.spouts[self.plan[0][0]]
+        self.clear()
+        self.say(f'Run {self.runs_done() + 1} of {self.runs_done() + len(self.plan)}: {spout.name} spout, '
+                 f'{spout.valve_ms:g} ms, {spout.count} openings.\n\nFold a Kimwipe onto the weighing dish, '
+                 'zero the scale with both on it, and put the dish on the box with the Kimwipe touching both '
+                 'spouts. Top up the syringe if it needs it. Then press Run.')
+        self.buttons(('Run', self.run, COL_OK), ('Cancel', self.close, COL_IDLE))
+
+    def run(self):
+        if refuse_if_bonsai_open():
+            return
+        for path in (self.workflow, BONSAI_EXE):
+            if not path.exists():
+                warn(f'{path.name} not found at {path}')
+                return
+        spout = self.spouts[self.plan[0][0]]
+        valve = water_calibration.SPOUTS[spout.name][0]
+        command = water_calibration.bonsai_command(BONSAI_EXE, self.workflow, valve, spout.valve_ms, spout.count,
+                                                   self.harp_port)
+        # The workflow's own folder: the Arduino version reads ..\..\Params\Rig_Params.csv from there.
+        self.proc, self.started = subprocess.Popen(command, cwd=self.workflow.parent), time.time()
+        self.clear()
+        self.say(f'Running: the {spout.name} valve opens once a second, {spout.count} times. '
+                 'Bonsai closes by itself when the openings are done.')
+        self.bar = ttk.Progressbar(self.body, length=560, maximum=water_calibration.expected_seconds(spout.count))
+        self.bar.pack(anchor='w', pady=10)
+        self.clock = tk.Label(self.body, text='', font=FONT_SMALL, fg=COL_MUTE, **bg(CARD))
+        self.clock.pack(anchor='w')
+        self.buttons(('Stop', self.stop, COL_STOP))
+        self.poll()
+
+    def poll(self):
+        if self.proc is None:
+            return
+        spout = self.spouts[self.plan[0][0]]
+        expected = water_calibration.expected_seconds(spout.count)
+        elapsed = time.time() - self.started
+        if self.proc.poll() is None:
+            self.bar['value'] = min(elapsed, expected)
+            late = elapsed > expected + CALIBRATION_STARTUP_S
+            self.clock.config(text=f'{elapsed:.0f} s' + ('  - longer than expected: if the valve has stopped, '
+                                                         'press Stop' if late else ''))
+            self.win.after(500, self.poll)
+            return
+        code, self.proc = self.proc.returncode, None
+        if code != 0 or elapsed < expected:
+            warn(f'Bonsai closed after {elapsed:.0f} s (exit code {code}), before {spout.count} openings could '
+                 'have finished. Repeat the run.')
+            self.next_run()
+            return
+        self.weigh()
+
+    def stop(self):
+        overdue = time.time() - self.started > water_calibration.expected_seconds(self.spouts[self.plan[0][0]].count)
+        self.proc = None
+        terminate_bonsai()
+        if overdue and messagebox.askyesno('Run stopped', 'Had the valve finished opening?', parent=self.win):
+            self.weigh()
+        else:
+            self.next_run()
+
+    def weigh(self):
+        self.clear()
+        self.say('Weigh the dish with the Kimwipe and type the weight in g, as the scale shows it '
+                 '(for example 0.27).')
+        self.weight = tk.StringVar()
+        entry = tk.Entry(self.body, textvariable=self.weight, width=10, font=FONT_UI)
+        entry.pack(anchor='w')
+        entry.focus_set()
+        self.win.bind('<Return>', lambda _event: self.record())
+        self.buttons(('Next', self.record, COL_OK), ('Repeat the run', self.next_run, COL_WARN))
+
+    def record(self):
+        try:
+            grams = float(self.weight.get().replace(',', '.'))
+        except ValueError:
+            grams = 0
+        if not 0 < grams < 10:
+            warn('Type the weight in g as the scale shows it, for example 0.27.')
+            return
+        name, _ = self.plan.pop(0)
+        spout = self.spouts[name]
+        spout.grams.append(grams)
+        water_calibration.log_run(CALIBRATION_LOG, self.rig['rig'], spout, grams)
+        if (len(spout.grams) == water_calibration.RUNS_PER_SPOUT and water_calibration.runs_disagree(spout.grams)
+                and messagebox.askyesno('Runs differ', f'The {name} runs differ by more than 10 % '
+                                        f"({', '.join(f'{g:g}' for g in spout.grams)} g). Do a third run?",
+                                        parent=self.win)):
+            self.plan.append((name, len(spout.grams) + 1))
+        self.next_run()
+
+    def results(self):
+        left, right = self.spouts['left'], self.spouts['right']
+        times = water_calibration.new_valve_times(left, right)
+        values = ', '.join(f'{column} = {ms}' for column, ms in times.items())
+        self.clear()
+        lines = [f"{s.name.capitalize()}: {s.valve_ms:g} ms gives {s.ul:.2f} µl per opening "
+                 f"({', '.join(f'{g:g}' for g in s.grams)} g) - {'in range' if s.ok else 'out of range'}"
+                 for s in (left, right)]
+        lines.append(f'Difference between the spouts: {abs(left.ul - right.ul):.2f} µl'
+                     + ('' if water_calibration.spouts_close(left, right) else ', more than 0.5 µl'))
+        self.say('\n'.join(lines))
+        if water_calibration.needs_change(left, right):
+            self.say(f'Suggested: {values}. Test these before they go into Rigs.csv.')
+            self.buttons(('Test these times', lambda: self.intro(times), COL_OK), ('Close', self.close, COL_IDLE))
+        else:
+            self.say(f"In range. Put these in rig {self.rig['rig']}'s row of Params/Rigs.csv (on your own computer, "
+                     f'then run the tests and push): {values}.')
+            self.buttons(('Copy the values', lambda: self.copy(values), COL_OK), ('Close', self.close, COL_IDLE))
+
+    def copy(self, text):
+        self.win.clipboard_clear()
+        self.win.clipboard_append(f"rig {self.rig['rig']}: {text}")
+
+    def close(self):
+        global calibration
+        if self.proc is not None and self.proc.poll() is None:
+            if not messagebox.askyesno('Stop the run?', 'A run is going. Stop it and close?', parent=self.win):
+                return
+            self.proc = None
+            terminate_bonsai()
+        self.win.destroy()
+        calibration = None
+
+
+calibration = None   # the open CalibrationWizard, if any
+
+
+def open_calibration():
+    global calibration
+    if RIG is None:
+        warn('This PC is not registered as a rig, so the calibration does not know its valves.')
+        return
+    if calibration is not None:
+        calibration.win.lift()
+        return
+    if refuse_if_bonsai_open():
+        return
+    calibration = CalibrationWizard(root)
+
+
 def push():
     initials = experimenter.var.get()
     config = EXPERIMENTERS.get(initials)
@@ -529,8 +756,7 @@ camera_button.grid(row=2, column=0, padx=10, pady=10, sticky='w')
 test_speakers_button = make_button(setup, 'Test Speakers', width=15)    # not implemented
 test_speakers_button.config(state='disabled')
 test_speakers_button.grid(row=1, column=1, padx=10, pady=10, sticky='w')
-calibrate_button = make_button(setup, 'Calibrate', width=15)            # not implemented
-calibrate_button.config(state='disabled')
+calibrate_button = make_button(setup, 'Calibrate', open_calibration, width=15)
 calibrate_button.grid(row=2, column=1, padx=10, pady=10, sticky='w')
 push_button = make_button(setup, 'Push Data', push)
 push_button.grid(row=3, column=0, padx=10, pady=10, sticky='w')
@@ -554,6 +780,7 @@ status_label = tk.Label(action_frame, text='', font=FONT_SMALL, fg=COL_MUTE, **b
 status_label.grid(row=4, column=0, columnspan=2, pady=(2, 0))
 
 paint_button(push_button, COL_OK)
+paint_button(calibrate_button, COL_OK)
 paint_button(kill_button, COL_STOP)
 paint_button(edit_button, COL_ACCENT)
 
