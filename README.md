@@ -236,3 +236,7 @@ different days, so there is no per-rig correction.
 - **Masking and opto sessions look identical** in the data except for `Session_Type`. The laser power is set in Zapit.
 - **Harp behaviour boards sometimes switch their valve outputs to pulse mode** on their own. The valves then only open for an instant, so little or no water comes out, in Flush Rig or a session. Why is not known; the fix is a setting in the Harp Behaviour app ([HARDWARE.md](HARDWARE.md#the-harp-behaviour-app)).
 - **The sound calibration workflow points at an old location.** It reads the sound card's port from the repository's old folder (`Desktop\HeadFixedBehavior`), so it needs one setting changed before use; see [HARDWARE.md](HARDWARE.md#sound).
+
+## Acknowledgements
+
+Thanks to [Kay Lee](https://github.com/kay-leee), who helps keep the behaviour room running and provided the lab's latest protocols, which the procedure documents here (training, surgery, perfusion and calibration) draw on.
