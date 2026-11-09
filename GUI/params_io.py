@@ -172,7 +172,7 @@ def as_text(value):
     if isinstance(value, (int, np.integer)):
         return str(int(value))
     if isinstance(value, (float, np.floating)):
-        return EMPTY if math.isnan(value) else '%.10g' % value
+        return EMPTY if math.isnan(value) else f'{value:.10g}'
     text = str(value).strip()
     return EMPTY if text == '' or text.lower() == 'nan' else text
 

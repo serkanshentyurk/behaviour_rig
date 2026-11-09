@@ -6,6 +6,7 @@ dependencies:
   - pandas
   - openpyxl
   - psutil
+  - pytest
   - pip
   - pip:
     - python-osc==1.8.1

@@ -193,7 +193,7 @@ Things to know when analysing it:
 
 ## Tests
 
-From the repository root, in gui_env (`GUI_env.yml` includes pytest; an environment created before October 2026 needs `pip install pytest`):
+From the repository root, in gui_env, not the analysis environment: the tests need the panel's packages (psutil, openpyxl). Both environment files include pytest; an older gui_env needs `pip install pytest`. On a Mac, create it once with `conda env create -f GUI/mac_env.yml`.
 
 ```
 python -m pytest tests
@@ -220,7 +220,7 @@ They can't tell you whether Bonsai builds and runs the workflow. For that, open 
 
 ## Known issues
 
-These are current as of 31 October 2026. Data recorded before 5 October 2026 carry the faults fixed that day.
+These are current as of 9 November 2026. Data recorded before 5 October 2026 carry the faults fixed that day.
 The analysis keeps those sessions and states it as a caveat: the same mouse ran on different rigs on
 different days, so there is no per-rig correction.
 
@@ -235,6 +235,7 @@ different days, so there is no per-rig correction.
 - **Lick times lag on Arduino rigs** by about 25 ms, because the serial link runs at 9600 baud.
 - **Masking and opto sessions look identical** in the data except for `Session_Type`. The laser power is set in Zapit.
 - **Harp behaviour boards sometimes switch their valve outputs to pulse mode** on their own. The valves then only open for an instant, so little or no water comes out, in Flush Rig or a session. Why is not known; the fix is a setting in the Harp Behaviour app ([HARDWARE.md](HARDWARE.md#the-harp-behaviour-app)).
+- **Some rigs' cameras show no image** (no live view in a session) until the camera's USB cable is unplugged and plugged back in. The cause is not known; see [INSTRUCTIONS.md](INSTRUCTIONS.md#troubleshooting).
 - **The sound calibration workflow points at an old location.** It reads the sound card's port from the repository's old folder (`Desktop\HeadFixedBehavior`), so it needs one setting changed before use; see [HARDWARE.md](HARDWARE.md#sound).
 
 ## Acknowledgements

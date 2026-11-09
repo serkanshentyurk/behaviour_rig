@@ -160,7 +160,7 @@ def test_custom_uses_the_row_and_a_preset_replaces_what_it_sets(tmp_path):
         ['regular', '', 'False', 'NaN', ''],
     ])
     assert not any(p.problems for p in presets.values())
-    row = dict(Opto_ON='FALSE', Opto_Type='Fiber', Zapit_Nb_Conditions=5, Inter_Trial_Interval=7)
+    row = {'Opto_ON': 'FALSE', 'Opto_Type': 'Fiber', 'Zapit_Nb_Conditions': 5, 'Inter_Trial_Interval': 7}
 
     custom = params_io.resolve(row_with(Preset='custom', **row), presets)
     assert custom.values['Opto_Type'] == 'Fiber' and not custom.from_preset and not custom.overridden

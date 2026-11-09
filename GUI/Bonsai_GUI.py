@@ -16,12 +16,11 @@ from dataclasses import dataclass
 from pathlib import Path
 from tkinter import messagebox, ttk
 
-import psutil
-from pythonosc.udp_client import SimpleUDPClient
-
 import params_io
+import psutil
 import push_data
 import water_calibration
+from pythonosc.udp_client import SimpleUDPClient
 
 # ================================================================ paths and constants
 GUI_DIR = Path(__file__).resolve().parent
@@ -81,7 +80,7 @@ def bg(colour):
 def shade(hex_colour, factor=0.88):
     """A darker #rrggbb, for the pressed state."""
     r, g, b = (int(hex_colour[i:i + 2], 16) for i in (1, 3, 5))
-    return '#%02x%02x%02x' % (int(r * factor), int(g * factor), int(b * factor))
+    return f'#{int(r * factor):02x}{int(g * factor):02x}{int(b * factor):02x}'
 
 
 def paint_button(button, colour):
@@ -377,11 +376,8 @@ def open_in_editor():
 
 # ================================================================ Push Data
 # ================================================================ water calibration (Calibrate)
-CALIBRATION_STARTUP_S = 60          # Bonsai's start-up and margin, before a run counts as overdue
-
-
 class CalibrationWizard:
-    """HARDWARE.md, "Water", one step at a time: each spout opens 200 times (left, right, left, right),
+    """HARDWARE.md, "Water", one step at a time: each spout opens 50 times (left, right, left, right),
     the weight is typed in after each run, and the end shows the valve times for Params/Rigs.csv.
     The arithmetic is in water_calibration.py."""
 
@@ -480,45 +476,52 @@ class CalibrationWizard:
                                                    self.harp_port)
         # The workflow's own folder: the Arduino version reads ..\..\Params\Rig_Params.csv from there.
         self.proc, self.started = subprocess.Popen(command, cwd=self.workflow.parent), time.time()
+        seconds = water_calibration.expected_seconds(spout.count)
         self.clear()
-        self.say(f'Running: the {spout.name} valve opens once a second, {spout.count} times. '
-                 'Bonsai closes by itself when the openings are done.')
-        self.bar = ttk.Progressbar(self.body, length=560, maximum=water_calibration.expected_seconds(spout.count))
+        self.say(f'Running in the Bonsai window: the {spout.name} valve opens once a second, {spout.count} times, '
+                 f'about {seconds:.0f} s once Bonsai has started. When the valve has stopped, press Done.')
+        self.bar = ttk.Progressbar(self.body, length=560, maximum=seconds)
         self.bar.pack(anchor='w', pady=10)
         self.clock = tk.Label(self.body, text='', font=FONT_SMALL, fg=COL_MUTE, **bg(CARD))
         self.clock.pack(anchor='w')
-        self.buttons(('Stop', self.stop, COL_STOP))
+        self.buttons(('Done', self.done, COL_OK), ('Stop and repeat', self.abort, COL_STOP))
         self.poll()
+
+    def expected(self):
+        return water_calibration.expected_seconds(self.spouts[self.plan[0][0]].count)
 
     def poll(self):
         if self.proc is None:
             return
-        spout = self.spouts[self.plan[0][0]]
-        expected = water_calibration.expected_seconds(spout.count)
         elapsed = time.time() - self.started
         if self.proc.poll() is None:
-            self.bar['value'] = min(elapsed, expected)
-            late = elapsed > expected + CALIBRATION_STARTUP_S
-            self.clock.config(text=f'{elapsed:.0f} s' + ('  - longer than expected: if the valve has stopped, '
-                                                         'press Stop' if late else ''))
+            self.bar['value'] = min(elapsed, self.expected())
+            self.clock.config(text=f'{elapsed:.0f} s' + ('  - press Done once the valve has stopped'
+                                                         if elapsed > self.expected() else ''))
             self.win.after(500, self.poll)
             return
-        code, self.proc = self.proc.returncode, None
-        if code != 0 or elapsed < expected:
-            warn(f'Bonsai closed after {elapsed:.0f} s (exit code {code}), before {spout.count} openings could '
-                 'have finished. Repeat the run.')
-            self.next_run()
-            return
-        self.weigh()
-
-    def stop(self):
-        overdue = time.time() - self.started > water_calibration.expected_seconds(self.spouts[self.plan[0][0]].count)
-        self.proc = None
-        terminate_bonsai()
-        if overdue and messagebox.askyesno('Run stopped', 'Had the valve finished opening?', parent=self.win):
+        self.proc = None                    # Bonsai closed: by hand, or it stopped on an error
+        count = self.spouts[self.plan[0][0]].count
+        if elapsed >= self.expected() and messagebox.askyesno(
+                'Bonsai closed', f'Bonsai has closed. Did the valve open all {count} times?', parent=self.win):
             self.weigh()
         else:
+            warn(f'Bonsai closed after {elapsed:.0f} s, before the {count} openings were done. Repeat the run; '
+                 'if it happens again, open the workflow by hand (HARDWARE.md, Water) to see the error.')
             self.next_run()
+
+    def done(self):
+        if time.time() - self.started < self.expected() and not messagebox.askyesno(
+                'Done?', 'The openings may not be finished yet. Has the valve stopped?', parent=self.win):
+            return
+        self.proc = None
+        terminate_bonsai()
+        self.weigh()
+
+    def abort(self):
+        self.proc = None
+        terminate_bonsai()
+        self.next_run()
 
     def weigh(self):
         self.clear()

@@ -137,7 +137,7 @@ def parsers(graphs):
         operands = []
         for j in g.outputs(i):
             if g.kind(j) == 'Equal':
-                operand = [c for c in g.nodes[j] if _local(c.tag) == 'Operand'][0]
+                operand = next(c for c in g.nodes[j] if _local(c.tag) == 'Operand')
                 operands.append(_text(operand, 'Value'))
         found.append((m.group(1), ptype, source, operands))
     return found
@@ -363,7 +363,6 @@ def test_trial_times_are_declared_reset_and_set(graphs):
             if not ok:
                 failures.append(f"{stage}/Record_Latency: {t} is not the timestamp of {source}")
         # early lick: first new contact, cut off when the window opens (Go_Cue output)
-        go_cue = g.find('rx:SelectMany', 'Go_Cue')
         ok = False
         for w in g.find('MulticastSubject', 'Early_Lick_Time'):
             if g.kind(g.inputs(w)['Source1']) != 'MemberSelector':
@@ -443,7 +442,7 @@ def _upstream(g, node):
 
 
 def _path_of(graphs, g):
-    return [path for path, gg in graphs.items() if gg is g][0]
+    return next(path for path, gg in graphs.items() if gg is g)
 
 
 def test_early_lick_abort_stops_the_trial(graphs):

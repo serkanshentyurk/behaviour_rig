@@ -16,7 +16,7 @@ import params_io
 TARGET_UL = 5.0                   # µl per opening
 RANGE_UL = (4.5, 5.5)             # a spout inside this needs no change
 MAX_SPOUT_DIFFERENCE_UL = 0.5     # and the two spouts may differ by at most this
-COUNT = 200                       # openings per run
+COUNT = 50                        # openings per run
 RUNS_PER_SPOUT = 2
 RUN_SPREAD = 0.10                 # a third run is offered when two runs differ by more than 10 %
 SECONDS_PER_OPENING = 1.0         # the workflows open the valve once a second
@@ -65,10 +65,11 @@ def workflow_for(rig_row: dict, repo: Path) -> Path:
 
 def bonsai_command(bonsai_exe, workflow, valve: int, valve_ms: float, count: int = COUNT,
                    harp_port: str | None = None) -> list:
-    """Bonsai, started without the editor so it exits when the openings are done, with the workflow's
+    """Bonsai, opened in its editor and started, as when the workflow is run by hand, with the workflow's
     settings given on the command line. The Harp workflow also takes the board's port; the Arduino one
-    reads its port from Params/Rig_Params.csv."""
-    cmd = [str(bonsai_exe), str(workflow), '--start', '--no-editor',
+    reads its port from Params/Rig_Params.csv. The editor stays open when the openings are done: the
+    window's Done button closes it."""
+    cmd = [str(bonsai_exe), str(workflow), '--start',
            f'-p:ValveNumber={valve}', f'-p:ValveTime={valve_ms:g}', f'-p:Count={count}']
     if harp_port:
         cmd.append(f'-p:PortName={harp_port}')
@@ -122,5 +123,5 @@ def log_run(path: Path, rig: str, spout: Spout, grams: float) -> None:
         writer = csv.writer(f)
         if new:
             writer.writerow(LOG_COLUMNS)
-        writer.writerow([dt.datetime.now().isoformat(timespec='seconds'), rig, spout.name, f'{spout.valve_ms:g}',
+        writer.writerow([dt.datetime.now(dt.timezone.utc).astimezone().isoformat(timespec='seconds'), rig, spout.name, f'{spout.valve_ms:g}',
                          spout.count, f'{grams:g}', f'{ul_per_opening(grams, spout.count):.3f}'])

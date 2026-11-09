@@ -103,7 +103,7 @@ Field colours: after Load, blue fields come from the mouse's preset and yellow f
 | **Flush Rig** | starts the water-line flushing workflow (`Params\Flush_Rig.bonsai` on Arduino rigs, `Params\Flush_Rig_Harp.bonsai` on Harp rigs); press again to stop it |
 | **Camera** | starts a live camera preview (`Params\Camera.bonsai`); press again to stop it. Stop it before launching a session, which uses the camera itself |
 | **Edit Workflow** | opens the task workflow in the Bonsai editor, set up so its file paths work; for looking at or changing the workflow (read the README first) |
-| **Calibrate** | water calibration, step by step: each spout opens 200 times, you type in the weight after each run, and it shows whether the valve times in `Rigs.csv` need changing and to what ([HARDWARE.md](HARDWARE.md#water)) |
+| **Calibrate** | water calibration, step by step: each spout opens 50 times, you type in the weight after each run, and it shows whether the valve times in `Rigs.csv` need changing and to what ([HARDWARE.md](HARDWARE.md#water)) |
 | **Test Speakers** | not implemented (greyed out) |
 
 **Kill Bonsai** closes every Bonsai window on the PC, including an editor opened with Edit Workflow. Save any work in the editor first.
@@ -150,4 +150,5 @@ To try **Early Lick Abort** in the emulator: switch it on, press 1 or 2 while th
 | "No server found on current machine" | the server drive isn't mapped, or the path in `GUI\paths\<name>.json` doesn't exist on it | map the drive and try again |
 | Push Data lists files "on the server with a different size" | an earlier push copied a session before it had finished | compare the two copies by hand; Push Data never overwrites |
 | No water comes out during Flush Rig or a session, on a Harp rig (31101, 31102) | the board's valve outputs have switched to pulse mode | in the Harp Behaviour app, set Use pulse to false ([HARDWARE.md](HARDWARE.md#the-harp-behaviour-app)) |
+| No camera image in a session, or a black Camera window | the camera has dropped off USB (happens on some rigs) | close Bonsai, unplug the camera's USB cable and plug it back in, then start again |
 | Bonsai won't start, with an error about a COM or serial port | a USB cable or hub was swapped and the ports changed | find the new ports and update `Rigs.csv` ([HARDWARE.md](HARDWARE.md#com-ports)) |
