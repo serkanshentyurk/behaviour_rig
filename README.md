@@ -11,6 +11,7 @@ This is lab instrumentation. It drives specific hardware on specific Windows PCs
 | run a session on the control panel                                                               | [INSTRUCTIONS.md](INSTRUCTIONS.md) |
 | know what a parameter does                                                                       | [PARAMETERS.md](PARAMETERS.md)     |
 | set up, calibrate or fix a rig                                                                   | [HARDWARE.md](HARDWARE.md)         |
+| find the calibration kit, spare parts or supplies in the room                                    | [HARDWARE.md](HARDWARE.md#where-things-are) |
 | run opto, masking or ALM control sessions                                                        | [ZAPIT.md](ZAPIT.md)               |
 | do the head-plate surgery                                                                        | [SURGERY.md](SURGERY.md)           |
 | perfuse a mouse at the end of an experiment                                                      | [PERFUSION.md](PERFUSION.md)       |

@@ -27,7 +27,7 @@ A configuration file holds the stimulation settings: target coordinates, type of
 
 Every day or every week, depending on how much the power drifts.
 
-1. Put the laser power meter's sensor in the laser's path.
+1. Put the laser power meter's sensor in the laser's path. The black box for laser calibration is on top of the shelves in the room ([HARDWARE.md](HARDWARE.md#where-things-are)).
 2. Switch the laser on at a known power, for example 3 mW, and read the meter.
 3. If the meter shows that power, carry on. If it doesn't, record the meter's reading at a few different settings, fit a straight line between the power you set and the power you measured, and use it to set the power you actually want.
 

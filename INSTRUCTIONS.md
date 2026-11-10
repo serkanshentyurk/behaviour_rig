@@ -49,14 +49,26 @@ Field colours: after Load, blue fields come from the mouse's preset and yellow f
 ## Step by step
 
 1. **Start the panel.** Double-click the desktop shortcut, or `GUI\Launch_Bonsai_GUI.bat`.
+
+   <img src="docs/images/step0-desktop-click-to-run.PNG" alt="The rig PC desktop, with the shortcut that starts the control panel marked" width="600">
+
    - A black window opens first. It updates the code from GitHub and then opens the panel. Leave it open: closing it closes the panel, and it shows error messages if something goes wrong.
    - Check the rig line at the bottom. If it says **RIG NOT CONFIGURED - launch disabled** in red, stop and see Troubleshooting.
 
-2. **Choose the experimenter** on the **Setup** tab (your initials; the list comes from the files in `GUI\paths`). This is only used to decide where Push Data copies to.
+2. **Flush the rig.** On the **Setup** tab press **Flush Rig**. Each time it starts, it opens both valves for about 10 seconds. Repeat until water comes out of both spouts and there is no air left in the tubes, then press it again to stop it (it has to be stopped before you launch).
+
+   <img src="docs/images/step1-flush-rig.PNG" alt="The Setup tab, with the Flush Rig button marked" width="600">
 
 3. **Choose the mouse** on the **Session** tab (Subject), then press **Load params**.
+
+   <img src="docs/images/step2-click-session-tab.PNG" alt="The control panel, with the Session tab marked" width="600">
+   <img src="docs/images/step3-select-animal-load-params.PNG" alt="The Session tab, with the Subject list and the Load params button marked" width="600">
+
    - The mouse's values fill every tab and you get "Params successfully loaded", which says whether a preset was used. If the mouse's Preset is not `custom`, the values its preset sets come from `Params\Presets.csv` (blue fields) and the rest from its row (yellow). If its row holds values the preset replaces, the message lists them.
    - Load params and Launch Bonsai turn green and the status line reads "Ready to launch".
+
+   <img src="docs/images/step4-params-loaded.PNG" alt="The message confirming that the parameters were loaded" width="600">
+
    - If Load refuses with "Not loaded - fix the spreadsheet", a value in the spreadsheet or in `Presets.csv` is unusable (see Troubleshooting).
 
 4. **Check the settings.** At least look at:
@@ -74,12 +86,21 @@ Field colours: after Load, blue fields come from the mouse's preset and yellow f
    - **Masking sessions:** use one of the `masking-…` presets. They run as opto sessions (Opto ON = True, Opto Type = Zapit), so load a Zapit configuration at 0 laser power. The data can only tell masking from opto by the Session Type the preset sets.
 
 6. **Press Launch Bonsai.**
+
+   <img src="docs/images/step5-launch-bonsai.PNG" alt="The Session tab, with the Launch Bonsai button marked" width="600">
+
    - Bonsai opens and starts the task. Within a few seconds four windows appear: the camera image, a text window with the latest trial's summary, a rolling performance graph and a bar graph. Trials start on their own.
    - The Launch button turns red and reads **End Session**.
+
+   <img src="docs/images/step6-bonsai-interface.PNG" alt="Bonsai running a session: the camera image, the latest trial, the performance graphs" width="600">
+
    - While the session runs, don't click Stop in Bonsai, don't close Bonsai's windows, and don't edit the workflow.
    - Launch refuses while any Bonsai is open (Camera, Flush Rig, the editor, or a session not yet killed); press Kill Bonsai first.
 
-7. **Ending the session.**
+7. **Ending the session:** End Session first, Kill Bonsai second.
+
+   <img src="docs/images/step7-end-session-kill-bonsai.PNG" alt="The panel with End Session marked "do first" and Kill Bonsai marked "do second"" width="600">
+
    - Press **End Session**. The trial in progress is abandoned (it won't appear in Trial_Summary), the valves close, Zapit is told to stop, and the data files are closed about 2 seconds later.
    - In a Zapit session, press End Session at a moment when the laser and the masking light are off ([ZAPIT.md](ZAPIT.md#during-and-after-the-session)).
    - The status line then says "Session ended - press Kill Bonsai". Press **Kill Bonsai** to close Bonsai.
@@ -87,7 +108,10 @@ Field colours: after Load, blue fields come from the mouse's preset and yellow f
    - **Never close Bonsai any other way during a session** (window X, Task Manager, shutting the PC down). The end of every data file is lost.
    - Always Kill Bonsai before launching another session.
 
-8. **Copy the data to the server.** On the Setup tab, press **Push Data**.
+8. **Copy the data to the server.** On the Setup tab, choose the **experimenter** (your initials; the list comes from the files in `GUI\paths`), then press **Push Data**. The experimenter only decides where Push Data copies to.
+
+   <img src="docs/images/step8-select-experimenter-push-data.PNG" alt="The Setup tab, with the Experimenter list and the Push Data button marked" width="600">
+
    - It copies session folders from `Data\` on this PC to your folder on the server (the path is in your file in `GUI\paths`).
    - It only copies mice whose ID starts with your initials (SS…, QP…).
    - It never overwrites a file already on the server and never deletes anything on the rig. At the end it says how many files it copied. A file already on the server with a different size (usually copied from an unfinished session) is listed and left alone, so you can check it by hand.
@@ -151,4 +175,4 @@ To try **Early Lick Abort** in the emulator: switch it on, press 1 or 2 while th
 | Push Data lists files "on the server with a different size" | an earlier push copied a session before it had finished | compare the two copies by hand; Push Data never overwrites |
 | No water comes out during Flush Rig or a session, on a Harp rig (31101, 31102) | the board's valve outputs have switched to pulse mode | in the Harp Behaviour app, set Use pulse to false ([HARDWARE.md](HARDWARE.md#the-harp-behaviour-app)) |
 | No camera image in a session, or a black Camera window | the camera has dropped off USB (happens on some rigs) | close Bonsai, unplug the camera's USB cable and plug it back in, then start again |
-| Bonsai won't start, with an error about a COM or serial port | a USB cable or hub was swapped and the ports changed | find the new ports and update `Rigs.csv` ([HARDWARE.md](HARDWARE.md#com-ports)) |
+| Bonsai won't start, with an error about a COM or serial port | a USB cable or hub was swapped and the ports changed, or a board isn't seen | in the Harp Behaviour app, click **List of Connected Devices** to see the Harp boards and their ports; in Windows Device Manager, look under **Ports (COM & LPT)** for errors or missing devices; then update `Rigs.csv` ([HARDWARE.md](HARDWARE.md#com-ports)) |

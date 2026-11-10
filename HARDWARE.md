@@ -29,6 +29,21 @@ The masking light, and the fibre light on 31101 and 31102, are driven by a secon
 
 Everything stays switched on; there is no start-up order.
 
+## Where things are
+
+- **Calibration:** the scale for water calibration and the black box for laser calibration are on top of the shelves in the room.
+
+  <img src="docs/images/calibrationStuff.jpg" alt="The scale and the black box for calibration on top of the shelves" width="400">
+
+- **Gloves, paper towels and Kimwipes:** extra ones are in cabinet LE3_A7, near the perfusion room.
+- **Spare parts:** new Zapit components, and the components for three more rigs (behaviour boards and the rest), are in the box next to rig 31103.
+
+  <img src="docs/images/newZapit_3rigComponents.jpg" alt="The box of new Zapit components and parts for three more rigs" width="400">
+
+- **Imaging rig:** its setup is on the shelf.
+
+  <img src="docs/images/imagingRig.jpg" alt="The imaging rig setup on the shelf" width="400">
+
 ## The spouts
 
 The spouts sit on a mover (Thorlabs) with knobs for fine adjustment. Set them slightly below the mouse's mouth, the same distance from both sides, so it can reach and lick both. Touching a spout turns on its sensor light, which is the quickest way to check that a sensor works.
@@ -43,7 +58,12 @@ When and how to change the tubing or a valve, and where spares and tools are kep
 
 ## COM ports
 
-Each board appears in Windows as a COM port, and the ports are recorded in the rig's row of `Params/Rigs.csv`. The numbers can change when a USB cable or hub is swapped (not when the PC restarts), and Bonsai then won't start. Find the new ports in Windows Device Manager or the Harp Behaviour app, update `Rigs.csv` in the repository, and push.
+Each board appears in Windows as a COM port, and the ports are recorded in the rig's row of `Params/Rigs.csv`. The numbers can change when a USB cable or hub is swapped (not when the PC restarts), and Bonsai then won't start. To find the ports:
+
+1. Open the Harp Behaviour app and click **List of Connected Devices**: it lists the Harp boards and their ports.
+2. Open Windows **Device Manager** and look under **Ports (COM & LPT)**: every board should be there, without a warning sign. A missing board or an error there is a cable, power or driver problem, not a port number.
+
+Then update `Rigs.csv` in the repository and push.
 
 ## The Harp Behaviour app
 
@@ -54,6 +74,25 @@ The rigs with a Harp behaviour board (31101, 31102) have the **Harp Behaviour** 
 **Opening the valves by hand.** On the **Interface** tab, tick Port 1 and Port 2 (the 12 V outputs) and send; untick them and send again to close the valves. This is also a way to flush by hand.
 
 ## Setting up a rig PC (once)
+
+The programs a rig PC needs (not a complete list of what is installed):
+
+| program | version | used for | installer |
+|---|---|---|---|
+| Git | | updating the code | |
+| Miniconda | | the panel's Python environment | |
+| Bonsai | 2.7.1 | the task | installs for the Windows user, in `C:\Users\<user>\AppData\Local\Bonsai` |
+| MATLAB | R2023a | Zapit | |
+| Basler software | | Zapit (to confirm) | |
+| National Instruments drivers | | Zapit (to confirm) | |
+| Arduino IDE | 2.0.0 (a release candidate) | Arduino rigs | `Downloads\arduino-ide-2.0.0-rc…` |
+| Harp Behavior | 2.0.0 | the Harp behaviour board and its app | `Desktop\HarpInstall\` |
+| Harp SoundCard | 1.3.2 | the sound card | `Desktop\HarpInstall\` |
+| Harp Runtime | 1.0 | Harp boards | `Desktop\HarpInstall\` |
+| USB driver | 2.12.26 | the boards' USB connection | `Desktop\HarpInstall\` |
+| Harp to CSV converter | 1.8.3 | converting Harp binary files to CSV | `Desktop\Harp_Convert_to_csv_1.8.3\` |
+
+Then:
 
 1. **Bonsai 2.7** installed for the Windows user, so that `%LOCALAPPDATA%\Bonsai\Bonsai.exe` exists. It needs these packages:
    - Bonsai.Core, Bonsai.System, Bonsai.Design.Visualizers
@@ -72,6 +111,8 @@ The rigs with a Harp behaviour board (31101, 31102) have the **Harp Behaviour** 
 6. **Check.** Start the panel; the bottom line should read `Rig <id>   (<computer name>)` in green.
 
 ## Calibration
+
+The scale for the water and the black box for the laser are on top of the shelves ([Where things are](#where-things-are)).
 
 Water calibration sets each valve's opening time (`Left_Valve_Time`, `Right_Valve_Time`); sound calibration sets `Speaker_Slope` and `Speaker_Y_Intercept`. New values go into the rig's row of `Params/Rigs.csv`, in the repository on your own computer: run the tests, commit and push, and the rig picks them up the next time its launcher starts. The rig's own `Params\Rig_Params.csv`, which older notes call `rig_params`, is rewritten from `Rigs.csv` every time the panel starts, so editing it has no lasting effect.
 
