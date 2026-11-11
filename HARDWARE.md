@@ -29,6 +29,19 @@ The masking light, and the fibre light on 31101 and 31102, are driven by a secon
 
 Everything stays switched on; there is no start-up order.
 
+## When the repository moves
+
+Each rig's launcher updates its copy from the repository it was cloned from (`origin`). When the repository moves to the lab's GitHub, repoint every rig. On the rig PC, in a terminal:
+
+```
+cd C:\Users\MouseRoom\Desktop\BehaviourRig
+git remote -v
+git remote set-url origin <the lab's repository URL>
+git remote -v
+```
+
+The second `git remote -v` should show the new address for fetch and push. Then start the panel once and check the black window shows `Code up to date` with the commit you expect.
+
 ## Where things are
 
 - **Calibration:** the scale for water calibration and the black box for laser calibration are on top of the shelves in the room.

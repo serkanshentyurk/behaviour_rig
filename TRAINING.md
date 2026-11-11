@@ -37,6 +37,9 @@ Do this in the repository on your own computer, before the mouse's first session
 
 Push Data only copies mice whose nickname starts with the experimenter's initials, so a mouse named otherwise never reaches the server.
 
+- **Your own mice:** add a profile `GUI/paths/<name>.json` with your initials and your folder on the server (copy `serkan.json`), name the mice with those initials, and choose yourself as the experimenter when you press Push Data.
+- **An inherited cohort:** keep the mice's nicknames and push with the profile that matches them; for `SS` mice that is `serkan.json`, which copies to `/Serkan/Head_Fixed_Behavior/Data/Raw`. Whether that stays the destination is for the lab to confirm ([HANDOVER.md](HANDOVER.md)).
+
 ## Surgery
 
 The mice get the Zapit head-plate surgery: a head-plate, with bregma and a 3 mm reference point marked on the skull for aligning Zapit. Give the mouse unmedicated jelly the day before. See [SURGERY.md](SURGERY.md).
@@ -100,7 +103,11 @@ Press **Push Data** on every rig you used (INSTRUCTIONS step 8). It only adds fi
 
 ## When a rig's disk is full
 
-Clear old sessions from the rig's `Data\` folder yourself. First check they are on the server: press Push Data, and if it copies no new files and lists no files with a different size, everything on the rig is already there.
+Clear old sessions from the rig's `Data\` folder yourself, but only after checking each one is on the server. Push Data can't tell you that for the whole rig: it only copies the mice whose nickname starts with the chosen experimenter's initials, so "0 new files copied" says nothing about anyone else's mice.
+
+1. Press Push Data once for every experimenter whose mice are in `Data\`.
+2. For each session folder you want to delete, open the same folder on the server (under that experimenter's `data_path`, see `GUI/paths/<name>.json`) and check it holds the same files with the same sizes.
+3. Only then delete the folder on the rig. A session Push Data listed as "on the server with a different size" stays until you have compared the two copies.
 
 ## Moving through training
 

@@ -52,7 +52,8 @@ Field colours: after Load, blue fields come from the mouse's preset and yellow f
 
    <img src="docs/images/step0-desktop-click-to-run.PNG" alt="The rig PC desktop, with the shortcut that starts the control panel marked" width="600">
 
-   - A black window opens first. It updates the code from GitHub and then opens the panel. Leave it open: closing it closes the panel, and it shows error messages if something goes wrong.
+   - A black window opens first. It updates the code from GitHub, shows the commit it is starting (`Code up to date: commit …`), and then opens the panel. Leave it open: closing it closes the panel, and it shows error messages if something goes wrong.
+   - If the update fails (no network, GitHub down, or the repository has moved), it says so, shows the commit and date of the code already on the PC, and asks whether to start with that code. Answer **N** and sort out the connection if you can. **Y** starts the panel with that code and with the mice's parameters as of that date, so use it only if the session can't wait, and tell whoever looks after the rigs.
    - Check the rig line at the bottom. If it says **RIG NOT CONFIGURED - launch disabled** in red, stop and see Troubleshooting.
 
 2. **Flush the rig.** On the **Setup** tab press **Flush Rig**. Each time it starts, it opens both valves for about 10 seconds. Repeat until water comes out of both spouts and there is no air left in the tubes, then press it again to stop it (it has to be stopped before you launch).
@@ -149,6 +150,22 @@ The data are written exactly as in a real session. Ignore the first trial of any
 
 To try **Early Lick Abort** in the emulator: switch it on, press 1 or 2 while the sound or delay is running, and check that the trial ends with outcome `Early` after the timeout.
 
+## First run: check a rig from start to finish
+
+Before your first real session on a rig, run this once without a mouse. It needs a registered rig PC: the bottom line of the panel shows the rig, not **RIG NOT CONFIGURED**.
+
+1. **Start the panel.**
+   Pass: the black window shows `Code up to date: commit …`, and the panel's bottom line shows this rig.
+2. **Run a short emulated session.** On the Session tab choose `TEST` and press Load params. On the Debug tab set **Emulator = True**; on the Opto tab set **Opto ON = False**. Choose **Agent Sim = True** (a simulated mouse answers) or **False** (you answer: key 1 is a left lick, key 2 a right lick). Press Overwrite params, then Launch Bonsai, and let at least 10 trials run.
+   Pass: Bonsai's text window counts the trials up, and the graphs change.
+3. **End it:** End Session first, Kill Bonsai second.
+4. **Check the files.** Open the newest folder in `Data\TEST\` (`SOUND_CAT_TEST_<year>_<month>_<day>`).
+   Pass: the session's files are there ([README, Output files](README.md#output-files)); `Trial_Summary…csv` has one row per completed trial, the count Bonsai showed (the trial in progress when you ended is not saved); `Session_Parameters…csv` shows Subject `TEST` and this rig's id.
+5. **Check the upload.** On the Setup tab choose the experimenter **TEST** and press Push Data. The `TEST` profile (`GUI/paths/test.json`) sends every mouse whose nickname starts with `TEST` to a scratch folder on the server, `/Head_Fixed_Behavior_Test/Data`, which the analysis never reads (the folder is **to confirm** and has to be created once; see [HANDOVER.md](HANDOVER.md)).
+   Pass: Push Data reports the files it copied, and the session folder on the server opens and holds the same files, with the same sizes.
+
+Never push test sessions with a real experimenter's profile: that folder is the analysis's raw data, and every mouse folder in it is loaded as an animal.
+
 ## Troubleshooting
 
 | What you see | Likely cause | What to do |
@@ -175,4 +192,5 @@ To try **Early Lick Abort** in the emulator: switch it on, press 1 or 2 while th
 | Push Data lists files "on the server with a different size" | an earlier push copied a session before it had finished | compare the two copies by hand; Push Data never overwrites |
 | No water comes out during Flush Rig or a session, on a Harp rig (31101, 31102) | the board's valve outputs have switched to pulse mode | in the Harp Behaviour app, set Use pulse to false ([HARDWARE.md](HARDWARE.md#the-harp-behaviour-app)) |
 | No camera image in a session, or a black Camera window | the camera has dropped off USB (happens on some rigs) | close Bonsai, unplug the camera's USB cable and plug it back in, then start again |
+| The black window says it could not update the code | no network, GitHub unreachable, or the repository has moved | answer N and fix the connection; if the repository moved, repoint the rig ([HARDWARE.md](HARDWARE.md#when-the-repository-moves)). Y starts the panel with the code and parameters already on the PC |
 | Bonsai won't start, with an error about a COM or serial port | a USB cable or hub was swapped and the ports changed, or a board isn't seen | in the Harp Behaviour app, click **List of Connected Devices** to see the Harp boards and their ports; in Windows Device Manager, look under **Ports (COM & LPT)** for errors or missing devices; then update `Rigs.csv` ([HARDWARE.md](HARDWARE.md#com-ports)) |

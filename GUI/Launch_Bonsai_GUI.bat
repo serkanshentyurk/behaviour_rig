@@ -20,9 +20,31 @@ REM --- Sync to server: take origin/main exactly, discard local edits to
 REM     TRACKED files. Ignored files (Rig_Params.csv, Subject_Params.csv) are
 REM     left untouched, so this rig keeps its generated params. No "git clean":
 REM     that would delete untracked files, which we never want on a rig.
+REM     If the sync fails, say so and ask before starting with the code already
+REM     on this PC: stale code is never used without someone choosing to.
+set "SYNCED=1"
 git fetch origin
-git reset --hard origin/main
+if errorlevel 1 set "SYNCED=0"
+if "%SYNCED%"=="1" git reset --hard origin/main
+if errorlevel 1 set "SYNCED=0"
 
+if "%SYNCED%"=="1" goto synced
+echo.
+echo ================================================================
+echo  WARNING: could not update the code from GitHub.
+echo  The code and mouse parameters on this PC are from:
+git log -1 --format="    commit %%h, %%cd: %%s" --date=format:"%%Y-%%m-%%d %%H:%%M"
+echo  Check the network, or see INSTRUCTIONS.md, Troubleshooting.
+echo ================================================================
+choice /C YN /M "Start the panel with this code anyway"
+if errorlevel 2 goto end
+goto launch_gui
+
+:synced
+echo Code up to date:
+git log -1 --format="    commit %%h, %%cd: %%s" --date=format:"%%Y-%%m-%%d %%H:%%M"
+
+:launch_gui
 echo === STARTING GUI ===
 where python
 python --version

@@ -12,6 +12,7 @@ This is lab instrumentation. It drives specific hardware on specific Windows PCs
 | know what a parameter does                                                                       | [PARAMETERS.md](PARAMETERS.md)     |
 | set up, calibrate or fix a rig                                                                   | [HARDWARE.md](HARDWARE.md)         |
 | find the calibration kit, spare parts or supplies in the room                                    | [HARDWARE.md](HARDWARE.md#where-things-are) |
+| take over running the experiments                                                                | [HANDOVER.md](HANDOVER.md)         |
 | run opto, masking or ALM control sessions                                                        | [ZAPIT.md](ZAPIT.md)               |
 | do the head-plate surgery                                                                        | [SURGERY.md](SURGERY.md)           |
 | perfuse a mouse at the end of an experiment                                                      | [PERFUSION.md](PERFUSION.md)       |
@@ -20,11 +21,12 @@ This is lab instrumentation. It drives specific hardware on specific Windows PCs
 ## New here?
 
 For the project as a whole (the analysis, your data folder on ceph, who to ask), start with `START_HERE.md`
-in the `sound_categorisation` repository. For the rig, read in this order:
+in the `sound_categorisation` repository. If you are taking over running experiments, read [HANDOVER.md](HANDOVER.md):
+where the mice stand and what is still to decide. For the rig, read in this order:
 
 1. [Access you need](#access-you-need) and [Contacts](#contacts), below.
 2. [TRAINING.md](TRAINING.md): the whole routine, from surgery to the experiments.
-3. [INSTRUCTIONS.md](INSTRUCTIONS.md): the control panel, step by step. Read it before your first session, and try a session in the emulator first; it needs no mouse.
+3. [INSTRUCTIONS.md](INSTRUCTIONS.md): the control panel, step by step. Read it before your first session, and do its [first run](INSTRUCTIONS.md#first-run-check-a-rig-from-start-to-finish) on the rig first; it needs no mouse.
 4. [HARDWARE.md](HARDWARE.md): what is on the rigs, and fixes for the common problems.
 5. Before any opto, masking or ALM control session: [ZAPIT.md](ZAPIT.md).
 

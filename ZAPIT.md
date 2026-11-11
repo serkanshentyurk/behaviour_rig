@@ -10,7 +10,11 @@ Opto, masking and ALM control sessions use Zapit, a scanning laser that shines l
 
 ## Configurations
 
-A configuration file holds the stimulation settings: target coordinates, type of stimulation, laser power. They are in `Desktop\zapit_protocols` on 31108; make a new one in Zapit before you need it. Load the one that matches the mouse's preset:
+A configuration file holds the stimulation settings: target coordinates, type of stimulation, laser power.
+
+The known-good configurations belong in this repository, in `Params/zapit/`, so every version is kept and they reach every Zapit rig with the code. **To recover:** today they exist only in `Desktop\zapit_protocols` on 31108. Copy them into `Params/zapit/` (in the repository on your own computer: commit and push) before anything happens to that PC. From then on, load them in Zapit from `Params\zapit\` in the rig's copy of the repository. A new configuration is made in Zapit on the rig and saved in `Desktop\zapit_protocols`, then added to `Params/zapit/` the same way. Don't edit the copies in `Params\zapit\` on the rig: the launcher undoes changes to the repository's files every time it starts.
+
+Load the one that matches the mouse's preset:
 
 | Preset | Configuration |
 |---|---|
@@ -20,8 +24,19 @@ A configuration file holds the stimulation settings: target coordinates, type of
 | `control-alm-uni` | `alm_stim_uni.yml` |
 | for testing | `test_stim.yml` |
 
-- The presets set **Zapit Nb Conditions** to 1, and it must match the number of conditions in the loaded configuration. If Zapit has no configuration loaded, or the numbers differ, the session ends itself at the start (INSTRUCTIONS step 5).
+- The presets set **Zapit Nb Conditions** to 1, and it must match the number of conditions in the loaded configuration. If Zapit has no configuration loaded, or the numbers differ, the session ends itself at the start (INSTRUCTIONS step 5). That is the only check: a different configuration with the same number of conditions passes, and the session is saved with the preset's labels.
 - Stim Site and Stim Type in the panel are only labels. Where the laser actually goes is set by the configuration, so loading the wrong one gives data with the wrong labels, and nothing warns you.
+
+### What to record with each session
+
+For every opto or masking session, write down:
+
+- the date, the mouse and the session folder;
+- the configuration's file name;
+- the commit the launcher printed when the panel started, which identifies the version of every file in `Params/zapit/`;
+- the laser power set, and the power measured that day ([Checking the laser power](#checking-the-laser-power)).
+
+Keep these in `zapit_log.csv` in your data folder on the server, next to `Raw` (**to confirm**); [`Params/zapit/zapit_log_template.csv`](Params/zapit/zapit_log_template.csv) has the columns.
 
 ## Checking the laser power
 
