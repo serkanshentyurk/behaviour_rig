@@ -28,5 +28,6 @@ obj/
 *.suo
 *.user
 
-# --- Pytest cache ---
+# --- cache ---
 .pytest_cache/
+.ruff_cache
